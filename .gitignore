@@ -1,5 +1,8 @@
 *.py[cod]
 
+# Mac metadata files
+.DS_Store
+
 # C extensions
 *.so
 
