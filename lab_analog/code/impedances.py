@@ -3,7 +3,7 @@ import numpy as np
 
 class R(object):
     def __init__(self, resistance):
-        self.value = resistance  # ohms
+        self.value = float(resistance)  # ohms
 
     def Z(self, w=1.e3):
         """Resistor with impdance of R (resistance in Ohms)"""
@@ -20,10 +20,12 @@ class C(object):
         >>> abs(L1.Z(w=2*pi*1e6))
         6.283185307179585
         """
-        self.value = capacitance  # farads
+        self.value = float(capacitance)  # farads
 
     def Z(self, w=1.e3):
         """The impedance of the capacitor for frequency w"""
+        if w == 0.0:
+            return np.inf
         return (1j*w*self.value)**-1
 
 
@@ -37,7 +39,7 @@ class L(object):
         >>> abs(L1.Z(w=2*pi*1e6))
         6.283185307179585
         """
-        self.value = inductance  # henries
+        self.value = float(inductance)  # henries
 
     def Z(self, w=1.e3):
         """The impedance of the inductor for frequency w"""
@@ -66,7 +68,7 @@ class CircuitImpedance(object):
         else:
             total = sum(Zs**-1)
             if total == 0.0:
-                return inf
+                return np.inf
             return total**-1
 
     def Z(self, w=1.e3):
@@ -91,10 +93,20 @@ class VoltageDivider(object):
         self.R1 = R1
         self.R2 = R2
 
-    def response(self, w):
-        """Returns the response (V_out/V_in) of the voltage divider at frequency w."""
-        if self.R1.Z(w) == inf:
+    def _response(self, w):
+        if self.R1.Z(w) == np.inf:
             raise Exception("This is an exceptional case and most likely you did something horrible.")
-        if self.R2.Z(w) == inf:
+        if self.R2.Z(w) == np.inf:
             return 1.0
         return abs((self.R2.Z(w) / (self.R2.Z(w) + self.R1.Z(w))))
+
+    def response(self, w):
+        """Returns the response (V_out/V_in) of the voltage divider at frequency w."""
+        try:
+            iter(w)
+        except:
+            # if its not an iterable, just return _response
+            return self._response(w)
+        else:
+            # if it is an iterable, map _response to each element to deal with the inf cases
+            return np.array(map(self._response, w))
