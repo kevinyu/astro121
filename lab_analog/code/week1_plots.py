@@ -4,6 +4,18 @@ import numpy as np
 from impedances import C, CircuitImpedance, L, R, VoltageDivider
 
 
+def capacitor_v_divider():
+    """1.2.2 Capacitor voltage divider"""
+    f = np.arange(1, 10000)
+    C1, R1 = C(1e-6), R(1e3)
+    RC = CircuitImpedance([R1, C1])
+    divider = VoltageDivider(C1, RC)
+    semilogx(f, divider.response(2*pi*f), "b-", linewidth=2)
+    ylabel(r"$V_{out}/V_{in}$", fontsize=16)
+    xlabel(r"$f$ $(Hz)$", fontsize=16)
+    show()
+
+
 def bandpass_plot():
     """1.7 Bandpass plot for our actual FM reciever values"""
     f = np.arange(100000, 10000000, 1000)
@@ -26,6 +38,7 @@ def bandpass_plot():
     ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
     legend(loc=3)
     show()
+
 
 def final_lowpass():
     """1.7 Bandpass plot for low pass at end of FM reciever"""
