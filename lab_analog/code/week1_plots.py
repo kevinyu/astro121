@@ -36,7 +36,7 @@ def RC_filters():
 
 def LC_impedance_v_freq():
     """1.4.2 LC Impedance vs Frequency plot for L and C in parallel and in series"""
-    f = np.logspace(4, 8, num=2000)
+    f = np.logspace(4, 7, num=20000)  # the more resolution at resonance, better the peaks
     C1, L1 = C(1e-6), L(1e-6)
     parallel = CircuitImpedance([L1, C1])
     series = CircuitImpedance([L1], [C1])
@@ -46,6 +46,7 @@ def LC_impedance_v_freq():
     xlabel(r"$f$ $(Hz)$", fontsize=18)
     xticks(fontsize=14)
     yticks(fontsize=14)
+    ylim(1e-3, 1e3)
     legend(loc=1)
     show()
 
