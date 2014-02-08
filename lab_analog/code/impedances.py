@@ -22,11 +22,21 @@ class C(object):
         """
         self.value = float(capacitance)  # farads
 
-    def Z(self, w=1.e3):
-        """The impedance of the capacitor for frequency w"""
+    def _Z(self, w=1.e3):
         if w == 0.0:
             return np.inf
         return (1j*w*self.value)**-1
+
+    def Z(self, w=1.e3):
+        """The impedance of the capacitor for frequency w"""
+        try:
+            iter(w)
+        except:
+            # If w is not an array, just get the impedance
+            return self._Z(w)
+        else:
+            # If is an array, map it if theres an infinity in there
+            return np.array(map(self._Z, w))
 
 
 class L(object):
@@ -61,15 +71,22 @@ class CircuitImpedance(object):
         """
         self.components = parallel_groups
 
+    def _single_Z_eq(self, Zs):
+        total = sum(Zs**-1)
+        if total == 0.0:
+            return np.inf
+        return total**-1
+
     def _parallel_Z_eq(self, components, w):
         Zs = np.array([component.Z(w) for component in components])
         if 0.0 in Zs:
             return 0.0
+        try:
+            iter(w)
+        except:
+            return self._single_Z_eq(Zs)
         else:
-            total = sum(Zs**-1)
-            if total == 0.0:
-                return np.inf
-            return total**-1
+            return np.array(map(self._single_Z_eq, Zs.T))
 
     def Z(self, w=1.e3):
         return sum([self._parallel_Z_eq(parallel_components, w) for parallel_components in self.components])
