@@ -29,13 +29,10 @@ class C(object):
 
     def Z(self, w=1.e3):
         """The impedance of the capacitor for frequency w"""
-        try:
-            iter(w)
-        except:
-            # If w is not an array, just get the impedance
+        if isinstance(w, float):
             return self._Z(w)
         else:
-            # If is an array, map it if theres an infinity in there
+            # If is an array, map it (in case theres an inf in there)
             return np.array(map(self._Z, w))
 
 
@@ -81,9 +78,7 @@ class CircuitImpedance(object):
         Zs = np.array([component.Z(w) for component in components])
         if 0.0 in Zs:
             return 0.0
-        try:
-            iter(w)
-        except:
+        if isinstance(w, float):
             return self._single_Z_eq(Zs)
         else:
             return np.array(map(self._single_Z_eq, Zs.T))
@@ -119,11 +114,8 @@ class VoltageDivider(object):
 
     def response(self, w):
         """Returns the response (V_out/V_in) of the voltage divider at frequency w."""
-        try:
-            iter(w)
-        except:
-            # if its not an iterable, just return _response
+        if isinstance(w, float):
             return self._response(w)
         else:
-            # if it is an iterable, map _response to each element to deal with the inf cases
+            # if it is not just a single value, map _response to each element to deal with the inf cases
             return np.array(map(self._response, w))
