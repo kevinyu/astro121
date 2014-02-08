@@ -34,6 +34,22 @@ def RC_filters():
     show()
 
 
+def LC_impedance_v_freq():
+    """1.4.2 LC Impedance vs Frequency plot for L and C in parallel and in series"""
+    f = np.logspace(4, 8, num=2000)
+    C1, L1 = C(1e-6), L(1e-6)
+    parallel = CircuitImpedance([L1, C1])
+    series = CircuitImpedance([L1], [C1])
+    loglog(f, abs(parallel.Z(2*pi*f)), "m-", linewidth=2, label="C and L in parallel")
+    loglog(f, abs(series.Z(2*pi*f)), "c-", linewidth=2, label="C and L in series")
+    ylabel(r"Impedance $(\Omega)$", fontsize=18)
+    xlabel(r"$f$ $(Hz)$", fontsize=18)
+    xticks(fontsize=14)
+    yticks(fontsize=14)
+    legend(loc=1)
+    show()
+
+
 def bandpass_plot():
     """1.7 Bandpass plot for our actual FM reciever values"""
     f = np.arange(100000, 10000000, 1000)
