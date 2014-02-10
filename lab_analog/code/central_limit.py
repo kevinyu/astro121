@@ -37,13 +37,14 @@ def n_scaling(distribution=uniform, *xlimits):
     figure()
     subplot(224)
     means = collect_samples(distribution, n=100, N=200)
+    print mean(means)
     hist(means, normed=True, bins=20, alpha=0.4)
     title(r"$n=100$")
     xlim(*xlimits)
     # std bar
     errorbar([mean(xlim())], [mean(ylim())/1.5], xerr=std(means), fmt="ro", capsize=5,
         capthick=2, elinewidth=2)
-    text(6.1, ylim()[1]*.75, r"$\sigma_{100}=%.2f$" % std(means))
+    text(16.1, ylim()[1]*.75, r"$\sigma_{100}=%.2f$" % std(means))
 
     subplot(223)
     means = collect_samples(distribution, n=50, N=200)
@@ -52,7 +53,7 @@ def n_scaling(distribution=uniform, *xlimits):
     xlim(*xlimits)
     errorbar([mean(xlim())], [mean(ylim())/1.5], xerr=std(means), fmt="ro", capsize=5,
         capthick=2, elinewidth=2)
-    text(6.1, ylim()[1]*.75, r"$\sigma_{50}=%.2f$" % std(means))
+    text(16.1, ylim()[1]*.75, r"$\sigma_{50}=%.2f$" % std(means))
 
     subplot(222)
     means = collect_samples(distribution, n=10, N=200)
@@ -61,7 +62,7 @@ def n_scaling(distribution=uniform, *xlimits):
     xlim(*xlimits)
     errorbar([mean(xlim())], [mean(ylim())/1.5], xerr=std(means), fmt="ro", capsize=5,
         capthick=2, elinewidth=2)
-    text(6.1, ylim()[1]*.75, r"$\sigma_{10}=%.2f$" % std(means))
+    text(16.1, ylim()[1]*.75, r"$\sigma_{10}=%.2f$" % std(means))
 
     subplot(221)
     means = collect_samples(distribution, n=5, N=200)
@@ -70,7 +71,7 @@ def n_scaling(distribution=uniform, *xlimits):
     xlim(*xlimits)
     errorbar([mean(xlim())], [mean(ylim())/1.5], xerr=std(means), fmt="ro", capsize=5,
         capthick=2, elinewidth=2)
-    text(6.1, ylim()[1]*.75, r"$\sigma_5=%.2f$" % std(means))
+    text(16.1, ylim()[1]*.75, r"$\sigma_5=%.2f$" % std(means))
 
     show()
 
