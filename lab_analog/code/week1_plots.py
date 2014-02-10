@@ -58,12 +58,12 @@ def bandpass_plot():
     Resistors = CircuitImpedance([R1, R1])
     LC_loop = CircuitImpedance([L1, C1, C1, C1])
     bandpass = VoltageDivider(Resistors, LC_loop)
-    plot(f, bandpass.response(2*pi*f)**2, "b-", linewidth=2)
+    plot(f, 20*log10(bandpass.response(2*pi*f)), "b-", linewidth=2)
     # format plot with slightly weird bounds for aesthetic reasons
     xlim(680000, 1320000)
-    ylim(ylim()[0], ylim()[1] + .05)
+    ylim(-5, ylim()[1] + .05)
     # plot(xlim(), [.5, .5], "m-", label="half power")
-    ylabel(r"$P_{out}/P_{in}$", fontsize=18)
+    ylabel(r"Gain $(dB)$", fontsize=18)
     plot([1.045e6, 1.045e6], ylim(), "r--", label=r"$1.045 MHz$", linewidth=2)
     plot([1.045e6-100e3, 1.045e6-100e3], ylim(), "r:", label=r"$\pm100 kHz$", linewidth=2)
     plot([1.045e6+100e3, 1.045e6+100e3], ylim(), "r:", linewidth=2)
@@ -71,7 +71,7 @@ def bandpass_plot():
     xticks(fontsize=14)
     yticks(fontsize=14)
     ticklabel_format(axis='x', style='sci', scilimits=(-2,2))
-    legend(loc=3)
+    legend(loc=1)
     show()
 
 

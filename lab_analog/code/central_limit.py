@@ -87,13 +87,15 @@ def n_scaling_2(distribution):
     # standard deviations of samples of size 20
     std_array = [np.std(collect_samples(distribution, n=int(n), N=20)) for n in n_array]
 
-    def sig_fit(n, A):
-        return A/sqrt(n)
-    A = curve_fit(sig_fit, n_array, std_array)[0][0]
-    fitfunc = lambda n: sig_fit(n, A)
+    def sig_fit(n, A, B):
+        return A * n**(B)
+    A, C = curve_fit(sig_fit, n_array, std_array)
+    A, B = A
+    print C
+    fitfunc = lambda n: sig_fit(n, A, B)
 
     loglog(n_array, std_array, "r.", label=r"sampled")
-    loglog(n_array, fitfunc(n_array), "g-", linewidth=2, label=r"fit: $\sigma = %.2fn^{1/2}$" % A)
+    loglog(n_array, fitfunc(n_array), "g-", linewidth=2, label=r"fit: $\sigma = %.2fn^{%.2f}$" % (A, B))
     xlabel(r"n (samples)", fontsize=18)
     ylabel(r"$\sigma$ (standard deviation)", fontsize=18)
     xticks(fontsize=14)
