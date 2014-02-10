@@ -14,7 +14,7 @@ Kevin Yu
 \maketitle
 
 \begin{abstract}
-We study the properties of basic analog circuit components, and demonstrate how they can be used to filter and manipulate electrical signals. Our study of manipulating signals culminated in the construction of an FM receiver capable of demodulating and amplifying an incoming signal carried at $1.045MHz$. Additionally, we use our powerful new understanding of impedances and reflections due to impedance mismatches to estimate the length of a long cable. We measure the cable to be roughly ~$120m$, and the characteristic impedance of the cable to be about $56\Omega$. Finally, we study possible sources and characteristics of noise in analog circuits; we measure the noise factor (NF) of our circuit to be $TODO \pm TODO$ LOL. To learn how to characterize noise, we empirically verify the Central Limit Theorem (CLT), finding that the standard deviation of the sample average of $n$ measurements is proportional to $n^{-0.51\pm0.02}$, in agreement with the CLT prediction of $\sigma \propto n^{-0.5}$.
+We study the properties of basic analog circuit components, and demonstrate how they can be used to filter and manipulate electrical signals. Our study of manipulating signals culminated in the construction of an FM receiver capable of demodulating and amplifying an incoming signal carried at $1.045MHz$. Additionally, we use our powerful new understanding of impedances and reflections due to impedance mismatches to estimate the length of a long cable. We measure the cable to be roughly ~$120m$, and the characteristic impedance of the cable to be about $56\Omega$. Finally, we study possible sources and characteristics of noise in analog circuits; we measure the noise figure (NF) of our circuit to be $TODO \pm TODO$ LOL. To learn how to characterize noise, we empirically verify the Central Limit Theorem (CLT), finding that the standard deviation of the sample average of $n$ measurements is proportional to $n^{-0.51\pm0.02}$, in agreement with the CLT prediction of $\sigma \propto n^{-0.5}$.
 \end{abstract}
 
 \section*{Introduction}
@@ -49,7 +49,7 @@ As an example of adding frequency dependent and complex impedances, Fig.\ref{fig
 \end{figure}
 
 \subsection*{Reflections and Termination}
-At the interface between two conductors with different impedances, a signal can be partially, or entirely, reflected back from whence it came. When a signal reaches an interface going from a low impedance conductor to a high impedance conductor, the signal will be reflected with no inversion. At an interface from a high impedance conductor to a lower impedance conductor, the signal will be reflected and inverted. If the time delay between the a signal and its reflection is measured, the length of the cable can be approximated by the simple formula\footnote{Approximating the speed of signal propogation in the cable to be $\frac{2}{3}c$}:
+At the interface between two conductors with different impedances, a signal can be partially, or entirely, reflected back from whence it came. When a signal reaches an interface going from a low impedance conductor to a high impedance conductor, the signal will be reflected with no inversion. At an interface from a high impedance conductor to a lower impedance conductor, the signal will be reflected and inverted. If the time delay between the a signal and its reflection is measured, we can convert that into the time it takes the signal to travel up and down the wire and solve for the length of the cable, using\footnote{Approximating the speed of signal propogation in the cable to be $\frac{2}{3}c$}:
 
 \begin{eqnarray}
 l_{cable} = \frac{2c}{3} \frac{\Delta{t}_{delay}}{2} \label{eq:cablelength}
@@ -123,17 +123,55 @@ A diode is a component that only conducts current in one direction\footnote{unle
 In the last section, we saw that we needed a way to preserve the amplitude information when smoothing over our signal. To do this, we will try only keep the positive half of the AM signal propogate, while blocking out the negative half. Instead of averaging out both positive and negative, which will zero out the signal, if we only average the positive half of the signal the low pass filter will smooth out the carrier frequency bumps but leave the relative amplitude information intact. To do this, we choose biasing resistors in the voltage divider such that Eq.\ref{eq:voltagedivider} gives us a biasing voltage of about $0.6V$. Note that the coupling capacitor right before the voltage divider ensures that there is no DC bias onther than the bias we provide here.
 
 \subsection*{Amplifier}
-TODO
+\begin{figure}[H]
+\center{
+  \includegraphics[width=150px]{amplifier_diagram}
+}
+\caption{BJT Amplifier.}
+\label{fig:amplifier_diagram}
+\end{figure}
+
+To increase the amplitude of the signal, we will use the NPN BJT amplifier in Fig\ref{fig:amplifier_diagram}. The BJT conducts current through the collector to the emitter as long as the voltage drop from the base to the emitter is above a certain voltage, $V_{BE}$. This voltage is in equilibrium and thus setting the base voltage fixes the emitter voltage. If the base-emitter voltage is greater than that threshold, more current will be drawn through the emitter resistor and the emitter voltage will rise until it reaches that $V_{BE}$. If the base-emitter voltage drops below $V_{BE}$, the transistor stops conducting and the emitter voltage drops until the equilibrium $V_{BE}$ is restored.
+
+The gain of the amplifier can be set by the ratio of the collector resistor to the emitter resistor. This gain can be made frequency dependent by including capacitors in parallel with either resistor.
+\begin{eqnarray}
+g = \frac{R_{collector}}{R_{emitter}} \label{amplifiergain}
+\end{eqnarray}
+The current going through the emitter---and thus the collector---can be chosen by first figuring out the corresponding emitter voltage using Ohm's Law: $V_{emitter}=IR_{emitter}$. Then, since we know that the emitter voltage is fixed relative to the base voltage, we can choose biasing resistors so the voltage at the base is
+\begin{eqnarray}
+V_{base} = V_{emitter} + V_{BE} \label{vbase}
+\end{eqnarray}
+
+We can set the current through the emitter by choosing a base voltage such that it fixes $V_{emitter} = IR_{emitter}$, by choosing
+\begin{eqnarray}
+ \frac{V_{base} - V_{BE}}{R_{emitter}} = I \label{eq:setcurrent}
+\end{eqnarray}
 
 \subsection*{Follower}
-TODO
-
+\begin{figure}[H]
+\center{
+  \includegraphics[width=150px]{follower_diagram}
+}
+\caption{BJT Emitter-Follower.}
+\label{fig:follwer_diagram}
+\end{figure}
+Similar to the NPN BJT Amplifier, the follower is like an amplifier with a gain of 1. The transistor works in the same way that it works in the amplifier---the emitter voltage is held fixed at a voltage $V_{BE}$ lower than the voltage at the base. We can choose the two biasing resistors to be equal, so that the center voltage of the follower is halfway between $0V$ and the power source voltage. Because the transistor cannot conduct if the base-emitter or collector-base are reverse biased, the selection of the bias at the base limits the amplitude of the signal that can be passed through the follower:
+\begin{eqnarray}
+V_{max,base} &=&V_{powersource}\label{eq:maxbase}\\
+V_{min,base} &=& V_{center} - V_{BE}\label{eq:minbase}
+\end{eqnarray}
+The advantage of the emitter-follower is that it can isolate two different parts of a circuit from each other by matching input and output impedances. If we connect something with a small input impedance, such as our $8\Omega$ speaker, to our amplifier with a high ouput impedance directly, almost all of the voltage drop will occur across the amplifier and the speaker will receive very little current. The follower however holds the emitter voltage steady by design, regardless of the load. Rather than decrease the emitter voltage, a small impedance load will tend to draw more current from the power source in order to keep it at a steady potential relative to the base. The follower matches impedances with a large input impedance and a small output impedance.
 \subsection*{Noise}
 \subsubsection*{Noise Factor}
 TODO
 \subsubsection*{Central Limit Theorem}
-TODO
+The Central Limit Theorem (CLT) says that the distribution of a sample average of a random variable is gaussian, regardless of the distribution of the random variable itself. That is, if we record the average $\bar{x}$ of $n$ measurements on a random variables $x$, the distribution of measurements of $\bar{x}$ should be gaussian around the true mean.
 
+Additionally, the standard deviation of that gaussian distribution scales by the inverse squareroot of $n$. The more elements in the sample, the narrower the distribution is, and the closer the measurements of the average will be to the true mean. A demonstration of this will be done in Fig.\ref{fig:n_scaling}.
+\begin{eqnarray}
+\sigma_{\bar{x}} \propto n^{-1/2} \label{eq:rootn}
+\end{eqnarray}
+The CLT can be used to characterize noise as truly random, as opposed to systematic errors or bias.
 \section*{Method}
 
 \subsection*{FM Receiver}
@@ -147,7 +185,7 @@ In this Lab, we will build an receiver tuned to a FM carrier frequency centered 
 \label{fig:circuitdiagram}
 \end{figure}
 
-\subsubsection*{FM Demodulator}
+\subsubsection*{Building the FM Demodulator}
 The first part of the FM Demodulator is the bandpass filter. As we discussed in the earlier section, we want to tune our LC bandpass filter to be centered at a frequency slightly below the carrier frequency, and to choose a bandwidth that gradually attenuates at higher frequencies. Using Eqs.\ref{eq:resonantfrequency} and \ref{eq:bandwidth}, we chose values
 
 \begin{center}
@@ -189,22 +227,30 @@ so that we have a roll-off frequency of $f=160kHz$. The transfer function, along
 \label{fig:lowpasstransfer}
 \end{figure}
 
-\subsubsection*{Amplifier}
-TODO
+\subsubsection*{Building the Amplifier}
+In the amplifier, we want a gain of at least 2. We choose values for the base and collector resistors such that we will have a gain of 2 for DC signals (and a larger gain for AC signals), using Eq.\ref{amplifiergain}. 
+\begin{center}
+  \begin{tabular}{ c  c }
+    $R_{collector}$ & $270\Omega$ \\
+    $R_{emitter}$ & $104\Omega$  \\
+    $C_{emitter}$ & $100\mu F$\\
+  \end{tabular}
+\end{center}
+This should give us a gain of $g=2.6$ for DC signals, and it greater gain for AC signals.
 
-Next we want to amplify the signal that we have demodulated so that it will be strong enough to be heard through the speakers. The way a NPN transistor works is that if the voltage between the Base and the Emitter, $V_{BE}$ is larger than a certain cut-off value, current will flow from the Collecter through the Emitter. The more current flows through the emitter resistor (the resistor closest to the emitter), the higher the voltage at the emitter will be ($V=IR$). Eventually the emitter voltage becomes large enough that $V_{BE}$ is no longer above the cut-off value and the transistor stops conducting current. Thus, the emitter will be held at a fixed voltage based on what you choose the Base voltage to be (by choosing the bias resistors based on Eq.TODO), minus the cutoff voltage. This is powerful because you can adjust the Base voltage freely and it will force the emitter voltage to follow. Now that you can fix the Emitter voltage (which fixes the current flowing through the collector and emitter), you have fixed the current flowing through the collector resistor and thus have fixed the collector voltage.
+To choose the values of the biasing resistors, we need to consider the current we want flowing through the transistor. We wanted about $1mA$ of current flowing through, so using Eq.\ref{eq:setcurrent} we chose the biasing resistors to be $1.5k\Omega$ and $300\Omega$. With our power supply at $5.6V$, our base will be biased at $0.93V$; thus the current in through $R_{emitter}$ will be centered at $3mA$.
 
-Such an amplifier circuit should have a gain of $\frac{R_C}{R_E}$. In our case, we include a capacitor in parallel with the emitter resistor in order to increase the gain for higher frequency signals.
+\subsubsection*{Building the Emitter-Follower}
+For the emitter-follower, we choose biasing resistors of equal value, so that the biasing will be centered halfway between the power source and GND. Because of the limits on the signal at the base described in Eqs.\ref{eq:maxbase} and \ref{eq:minbase}, centering $V_{base}$ at $V_{powersource}/2=+2.8V$ will allow us to handle the largest signals. We picked two $15k\Omega$ resistors for this purpose, making sure they were large so that the biasing circuit would not draw significant current from the other branch.
 
-\subsubsection*{Emitter-Follower}
-TODO
+As for the emitter resistor, we chose a value that would give us approximately $1mA$ through the emitter resistor: Our choice of $R_{emitter}=2.2k\Omega$ will give us a fixed center current of about $1.2mA$.
 
-The purpose of the Emitter-Follower is to provide a buffer between the output of the amplifier and the low impedance load (the speaker). If the follower was not used, the speaker would draw a significant amount of current and voltages in the circuit would drop substantially. The follower has a gain of one, so the signal is unchanged, but by the nature of the transistor the voltage is held steady; instead, more current is sourced from the collector.
+\subsection*{Measuring Impedance and Terminating a Cable}
+It is important to properly terminate cables because of reflections at points where the impedance is mismatched. A terminated cable will have no reflections when the impedance of the terminator is equal to the impedance of the cable itself.
 
-\subsection*{Impedance Matching}
-It is important to properly terminate cables because of reflections at points where the impedance is mismatched. An improperly terminated line will allow a signal to reflect off of the end and distort the signal at the imput after a short time delay. A signal terminated with a short will see an inverted reflection, and a signal terminated with an open circuit will see an uninverted reflection. The delay between the incoming signal and its reflection is the time it takes for the signal to propogate down the length of the cable and back.
+To estimate the impedance of the cable, we will begin by sending in a $100kHz$ square wave to a T-connector at the scope input. At the other end of the T-connector, we will connect the very long cable. What we should see on the scope will look like Fig.\ref{fig:reflections}, where the trace is the sum of the actual square wave signal and the slightly delayed reflection coming from the open end of the cable.
 
-To estimate the length of a very long cable, we sent a square wave signal down it and analyzed the distortion on the scope trace. To estimate the length of the cable, we can analyze the scope trace to determine the time delay, and, estimating the speed of signal propogation in the cable to be $\frac{2}{3}c$, use the relation $l_{cable} \approx \frac{1}{2} \frac{2c}{3} t_{delay}$.
+To determine the impedance of the cable, we will terminate the cable by connecting resistors to the far end of it and observing how it affects the scope trace. If we begin to see inverted reflections, it means our terminator's impedance is too low, and uninverted reflections mean our impedance is too high. When the cable is properly terminated, the reflections should disappear and the square wave will be undistorted.
 
 \begin{figure}[H]
 \center{
@@ -214,8 +260,8 @@ To estimate the length of a very long cable, we sent a square wave signal down i
 \label{fig:reflections}
 \end{figure}
 
-\subsection*{Measuring Cable Length}
-TODO
+\subsection*{Estimating Cable Length}
+To estimate the length of the cable, we will use the same procedure as above to get the scope trace in Fig.\ref{fig:reflections}. This time, we will read the time delay between incoming signal and reflected signal off of the scope's x-axis. By using Eq.\ref{eq:cablelength} and estimating the speed of signal propogation in the cable to be $\frac{2}{3}c$, we can estimate $l_{cable}$.
 
 \subsection*{Noise}
 \subsubsection*{Noise Factor}
@@ -223,7 +269,7 @@ TODO
 \subsubsection*{Central Limit Theorem}
 To test and demontstrate the Central Limit Theorem, we will write a program to simulate sampling from random, non-gaussian distributions. By running this a large amount of times, $N$, we will show that the distribution of sampled means is gaussian. To do this I will be interested in the average value of $n=100$ measurements of a random variable---in this case, I will be interested in the average starting value of 100 Blackjack hands\footnote{I will count Aces as 11 unless the sum of the two cards is greater than 21, in which case I count the aces as 1; i.e. the hand AA is worth 12 points).}. By the Law of Large Numbers, the more we make this measurement, the more our results will approach their true distribution; in this case, we hope to see a gaussian distribution.
 
-Additionally, we will demonstrate that the standard deviation on a sampled mean decreases as the inverse square root of the number of samples taken, $n$. For this, we will vary $n$, the number of measurements per sample (i.e., I will determine the distribution of the average starting value of $n$ Blackjack hands, for $n=5,10,50,$ and $100$). By plotting histograms of the results, we should be able to see that the width fo the distribution decreases for larger $n$, and if we find the standard deviation at many values of $n$ we should be able to fit a power law to it and verify the CLT, that $\sigma \propto n^{-1/2}$.
+Additionally, we will demonstrate that the standard deviation on a sampled mean decreases as the inverse square root of the number of samples taken, $n$. For this, we will vary $n$, the number of measurements per sample (i.e., I will determine the distribution of the average starting value of $n$ blackjack hands, for $n=5,10,50,$ and $100$). By plotting histograms of the results, we should be able to see that the width fo the distribution decreases for larger $n$. If we find the standard deviation at many values of $n$ we should be able to fit a power law to it and verify the CLT, that $\sigma \propto n^{-1/2}$.
 
 The code I wrote and used can be found in my github respository at
 
@@ -251,8 +297,8 @@ Z_{cable} \approx 56\Omega \nonumber
 \subsection*{Noise Figure and Y-Factor}
 TODO
 
-\subsection*{Central Limit Theorem Results}
-In Fig.\ref{fig:approachgaussian}, we can see that the distribution of a sampled mean is approximately gaussian. By the Law of Large Numbers, the larger we make the value of $N$ the closer our measurements will approximate their true distribution. For the figure, we measure the average starting value of $n=100$ blackjack hands. As you can see in the figure, at large values of $N$ our results show that the distribution of a sampled mean is approximately gaussian. This is true even though the distribution of a single measurement is not gaussian, the distribution of the mean of multiple measurements is.
+\subsection*{Central Limit Theorem Demonstration}
+In Fig.\ref{fig:approachgaussian}, we can see that the distribution of a sampled mean is approximately gaussian. By the Law of Large Numbers, the larger we make the value of $N$ the closer our measurements will approximate their true distribution. For this demonstration, I measured the average starting value of $n=100$ blackjack hands. As you can see in the figure, at large values of $N$ our results approach a gaussian distribution. This is true even though the distribution of a single measurement is not gaussian.
 
 \begin{figure}[H]
 \center{
@@ -261,7 +307,11 @@ In Fig.\ref{fig:approachgaussian}, we can see that the distribution of a sampled
 \caption[SODUMB]{Distribution of the average starting value of $n=100$ blackjack hands. At large $N$, the results should approach their true distribution. The dotted red line is a fitted gaussian to the data.}
 \label{fig:approachgaussian}
 \end{figure}
-To demonstrate the standard deviation's $\frac{1}{\sqrt{n}}$ dependence, I sampled the average value of $n$ randomly chosen numbers between 0 and 10 (inclusive) for values of $n$ ranging from 2 to 10000. For each value of $n$, I will record the standard deviation of $N=20$ measurements of the mean.
+To demonstrate the standard deviation's $\frac{1}{\sqrt{n}}$ dependence from Eq.\ref{eq:rootn}, I sampled the average value of $n$ randomly chosen blackjack hands, for sample sizes $n$ ranging from 2 to 10000. For each value of $n$, I recorded the standard deviation of $N=20$ measurements of the mean. Fig.\ref{fig:n_scaling} demostrates visually the narrowing of the distributions for large $n$, while Fig.\ref{fig:n_scaling2} demonstrates the relationship in Eq.\ref{eq:rootn}. Our data suggests that
+\begin{eqnarray}
+\sigma \propto n^{-0.51 \pm 0.21} \nonumber
+\end{eqnarray}
+which is in close agreement with the CLT.
 \begin{figure}[H]
 \center{
   \includegraphics[width=360px]{CLT_n_scaling}
@@ -277,17 +327,18 @@ To demonstrate the standard deviation's $\frac{1}{\sqrt{n}}$ dependence, I sampl
 \label{fig:n_scaling2}
 \end{figure}
 
-
 \section*{Conclusion}
 
+
+
 \section*{Acknowledgement}
-Thanks to Jeff Lievense and Maissa Salama for working hard in getting through this lab with me. Thanks to the lab instructors---Prof. Aaron Parsons, Karto, and Baylee---for making the lab possible to complete, despite the pain it has caused.
-Plots were done in Python using the Numpy and Matplotlib libraries.
+Thanks to my lab parters, Jeff Lievense and Maissa Salama, for working hard in getting through this lab with me. Thanks to the lab instructors---Prof. Aaron Parsons, Karto, and Baylee---for making the lab possible to complete, despite the pain it has caused us all.
+All figures were done in Python using the Numpy and Matplotlib libraries.
 Voltage divider image shamelessly stolen from the lab manual.
-Circuit diagrams created in LTSpice.
+Other custom circuit diagrams created in LTSpice, which is at least free.
 
-\begin{thebibliography}{1}
+%begin{thebibliography}{1}
 
-\end{thebibliography}
+%end{thebibliography}
 
 \end{document}
