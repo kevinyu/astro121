@@ -29,7 +29,7 @@ def n_scaling(distribution=uniform, *xlimits):
 
     For the report, I'll use the "uniform" distribution
     To generate the plot I use in the report run:
-    >>> n_scaling(uniform, 0, 10)
+    >>> n_scaling(blackjack, 10, 19)
     """
     if not xlimits:
         xlimits = []
@@ -81,7 +81,7 @@ def n_scaling_2(distribution):
 
     For the report, I'll use the "uniform" distribution
     To generate the plot I use in the report run:
-    >>> n_scaling_2(uniform)
+    >>> n_scaling_2(blackjack)
     """
     # look at n values from 1 to 10000
     n_array = np.logspace(0, 4, 100)
@@ -148,3 +148,8 @@ def approach_gaussian(distribution=uniform):
     plot(centers, normpdf(centers, mu, sigma), "r--", linewidth=3)
     title(r"$N=20000$")
     show()
+
+
+if __name__ == "__main__":
+    n_scaling(blackjack, 10, 19)
+    n_scaling_2(blackjack)
