@@ -1,0 +1,25 @@
+### Using DFEC
+import DFEC
+
+# SRS Function Generator
+DFEC.set_srs
+ freq: Set LO frequency
+ vpp: Set amplitude in volts
+ off: Set DC offset
+ pha: Set phase offset
+
+
+# Sampling
+DFEC.sampler
+ nSamp: number of samples
+ freqSamp: sampling frequency in Hz
+
+>>> data = DFEC.sampler(1e3, 1e7)  # acquired data
+
+
+Numpy has a builtin function called savez which saves arrays into a single file
+>>> np.savez("mixer_data.npz", data)  # saves array to file
+>>> F = np.load("mixer_data.npz")
+>>> F.files
+['arr_0']
+>>> data = F["arr_0"]  # get data back out of npz
