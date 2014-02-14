@@ -1,0 +1,9 @@
+# f_10000Hz.npz
+N = 256
+f_sample = 10kHz
+f_signal = 10kHz
+
+# fast_signal.npz
+N = 256
+f_sample = 7kHz
+f_signal = 10MHz
