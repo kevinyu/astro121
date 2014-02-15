@@ -4,14 +4,18 @@ import numpy as np
 def dft(E, f_sample=1.0, power=True, f_res=None, f_max=None):
     """Do a discrete fourier transform on data array E
 
-    E: data array
-    f_sample (default=1.0): sample frequency of data
+    E: data array in time domain
+    f_sample (default=1.0): sample frequency of data in Hz
     power (default=True): return power spectrum if True
     f_res (default=None): resolution of power spectrum in Hz
         if None, uses f_sample/N
+    f_max (default=None): maximum frequency to analyze
+        if None, uses f_sample/2
 
-    >>> nu, Enu = dft(data, f_sample=1e3)
-    >>> plot(nu, np.abs(Enu)**2)  # plots power spectrum
+    Returns
+        nu: array of frequency values
+        E_nu: array of transformed values corresponding to frequency array
+            if power=True, returns abs(E_nu)**2 here
     """
     dt = (f_sample)**-1
     N = len(E)
@@ -28,6 +32,6 @@ def dft(E, f_sample=1.0, power=True, f_res=None, f_max=None):
         f_res = f_res or f_sample / N
         nu = np.arange(-f_sample/2., (f_sample/2.) * (1. - 2./N) + f_sample/N, f_res)
     else:
-        f_res = f_res or (f_max[1] - f_max[0]) / N
+        f_res = f_res or f_sample / N
         nu = np.arange(-f_max, f_max, f_res)
     return (nu, abs(E_nu(nu)) ** 2) if power else (nu, E_nu(nu))
