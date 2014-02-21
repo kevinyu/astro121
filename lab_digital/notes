@@ -23,3 +23,21 @@ Numpy has a builtin function called savez which saves arrays into a single file
 >>> F.files
 ['arr_0']
 >>> data = F["arr_0"]  # get data back out of npz
+
+
+# Using ROACH
+ssh root@roach
+
+cd /boffiles
+./adc_snaps_2014_{watever the latest is}.bof &  # Runs bof in background programming the FPGA
+# keep this running, and when you are done with data collection, kill the process using PID
+
+cd /proc/{PID}/hw/ioreg
+# write a python script that writes a 1 to the trig file, then writes a 0.
+# When the 0 is written, data will be collected
+# the data is around here in binary form
+#
+# to convert:
+ipython
+np.fromfile(file, dtype=?)
+# we are big endian so our dtype needs to specify: ">i" instead of just "i"
