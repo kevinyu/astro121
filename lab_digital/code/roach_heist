@@ -1,0 +1,4 @@
+#!/usr/local/bin/bash
+
+mkdir /home/kyu/astro121/lab_digital/data/roach/$2
+scp root@roach:/proc/$1/hw/ioreg/* /home/kyu/astro121/lab_digital/data/roach/$2
