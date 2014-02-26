@@ -34,10 +34,11 @@ cd /boffiles
 
 cd /proc/{PID}/hw/ioreg
 # write a python script that writes a 1 to the trig file, then writes a 0.
+echo -ne "\x00\x00\x00\x01" > trig
 # When the 0 is written, data will be collected
 # the data is around here in binary form
 #
 # to convert:
 ipython
-np.fromfile(file, dtype=?)
+np.fromfile(file, dtype=">i")
 # we are big endian so our dtype needs to specify: ">i" instead of just "i"
