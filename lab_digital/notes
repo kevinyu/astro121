@@ -42,3 +42,17 @@ echo -ne "\x00\x00\x00\x01" > trig
 ipython
 np.fromfile(file, dtype=">i")
 # we are big endian so our dtype needs to specify: ">i" instead of just "i"
+
+
+# Digital down conversion
+cd /boffiles
+./dig_dwn_conv_2_2014_Feb_25_1332.bof &
+cd /proc/{PID}/hw/ioreg
+# from here, you needs to put in da coeffs
+# there be 18 bits (the lower 18 bits)
+# 17 bits after binary point
+# i.e. 0.00000...
+#
+# to write .25 + .125i to the first coefficient
+echo -ne "...\x02\x00\x00\00...." > coeff_imag0
+echo -ne "...\x01\x00\x00\00...." > coeff_real0

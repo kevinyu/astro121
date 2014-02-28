@@ -7,8 +7,8 @@ dt = 1./f_sample
 
 N = 16384
 t = np.arange(0, N) * dt
-data_p = np.load("../data/2_1_1/asdfasdffsig_840000.0.npz")["arr_0"]
-data_m = np.load("../data/2_1_1/asdfasdffsig_760000.0.npz")["arr_0"]
+data_p = np.load("../data/2_1_1/thurs_sig_2100000.0.npz")["arr_0"]
+data_m = np.load("../data/2_1_1/thurs_sig_1900000.0.npz")["arr_0"]
 
 plot(t, data_p)
 figure()
