@@ -6,9 +6,7 @@ import numpy as np
 f_sample = 200e6
 f_signal = 25e6
 
-# lo_freqs = [4, 16, 32, 64]
-lo_freqs = [4, 16, 32, 64]
-lo_freqs = [40, 46, 48, 50, 56]
+lo_freqs = [4, 16, 32, 40, 46, 48, 50, 56, 64]
 
 yes_array = ["y", "Y"]
 
