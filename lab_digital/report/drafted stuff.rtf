@@ -1,0 +1,30 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1265
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww14200\viewh16220\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 1.1.1\
+\
+One of the most important concepts in digital sampling is the Nyquist criteron, which specifies a minimum sampling frequency at which it is possible for a digital sample to reproduce the frequency composition of an analog signal. The Nyquist criteron can be put in this way: for a particular sample rate $\\nu_\{samp\}$, only signal frequencies at or below the nyquist rate, $\\nu_\{Nyquist\} = \\nu_\{samp\} / 2$ can be captured by the digital sample. The reason for this is fairly intuitive; if one takes samples separated by a time $\\Delta\{t\}$, then any fluctuations that might occur in the signal will be missed. Failure to satisfy the Nyquist criteron will result in aliasing, in which the signal is sampled at points which appear to belong to a slower signal with opposite phase (TODO see figure X).\
+\
+To test this, we use the Pulsar sampler card to digitally sample incoming sine waves of various frequencies. We will choose the sampling rate to be $\\nu_\{samp\} = 10kHz$, and test signal frequencies from 1 kHz to 9 kHz. The results of this can be seen in Fig. X.\
+\
+The plot shown here represent signals from 1kHz to 9kHz, each sampled at the same sampling frequency, $\\nu_\{samp\} = 10 kHz$. The Nyquist criteron for such a sample frequency suggests that we should only be able to faithfully reproduce signals at or less than $\\nu_\{samp\} / 2 = 5 kHz$. As you can see from both the time domain representation of the sampled signals, as well as their power spectrums in the frequency domain, the signals from 1 kHz to 4 kHz are all represented well; though the interpolated data looks jagged, the underlying sine shape and frequency are clearly visible. Additionally, the fourier representation of these signals include sharp spikes at exactly the expected frequencies.\
+\
+At 5 kHz, which is exacly the Nyquist rate, the sampled waveform is a series of high and low values, where the high values are always at X and the low values are always at Y. The reason why the two values are always identical is because at $\\nu_\{sig\} = \\nu_\{samp\}/2$, the incoming signal is sampled exactly twice per period, at exactly the same points in the sine\'92s cycle each time. Because there are only two values, the sampled waveform lacks detail; depending on how you choose to interpolate the points, the digitized waveform can be interpreted as a sine wave, a triangle wave, a square wave, etc. However, the signal\'92s frequency of 5 kHz is still clear in both the time domain representation and the fourier spectrum.\
+\
+Above signal frequencies above 5 kHz, we no longer see spikes at the expected frequencies in the pokwer spectrum. When we look at the sampled waveform in the time domain (actual signal plotted in dotted line) the signals from 6 kHz to 9 kHz appear as sine waves with slower frequencies. These frequnecies turn out to be the actual frequency reflected around the nyquist rate of 5 kHz, as you can see in the power spectrum. Additionally, by analysing the appearance of the time domain waveform, it can be seen that the sampled waveform appears to have a $180^\\deg$ phase shift relative to its true phase; this can be seen by noticing that although the actual signal begins with a downward slope, the sampled waveform begins with an upward slope.\
+\
+\
+2.2.2\
+\
+The difference between the double side-band (DSB) and single sideband (SSB) mixers is that the double sideband mixes a signal with a real-valued sinusoid (which results in sidebands at $\\omega_0 \\pm \\omega_\{LO\}$), wheras the single sideband mixes the signal with a pure sinusoid of the form $e^\{i\\omega t\}$, resulting in only one sideband in the output. \
+\
+\
+3.1.1\
+Next, we implement a digital 5/8 band filter\'97that is, we divide our band into 8 frequency channels and filter only the 5 central channels centered around zero. The 5/8 band filter is shown in the frequency domain in Fig. TODO, with our 8 discrete sampled points labeled.\
+\
+To apply this filter, we want to convolve the filter\'97in the time domain\'97with the incoming signal. To do this with the FIR, we need 8 sampled points of the 5/8 band in the time domain to multiply by sampled signal values. To get these values, we apply an inverse fourier transform to the 5/8 band shown in Fig. X, and get this set of points:\
+\
+}
