@@ -29,10 +29,7 @@ We study techniques of digital sampling and data analysis in order to demonstrat
 \section{Introduction}
 In this lab, we learn the advantages and limitations of digital sampling and mixing, as well as methods of analyzing the spectral compsition of signals. Digital sampling is inherently limited by the need to translate a continuous signal's characteristics into discrete values that can be understood by a computer, which represents measurements in terms of binary \texttt{1}'s and \texttt{0}'s. Thus, there are trade-offs at every turn---for example, turning up your sampling rate will improve the shape of your waveform, but your computer's memory will fill up faster and you will not be able to sample for as long.
 
-Luckily, knowing the limitations of digital sampling also allows us to determine ways in which we can save time/energy/memory without losing important information about the radio signals we are trying to study. In cases where we are dealing with frequencies much greater than can be handled by our equipment, we will want to use heterodyne mixing to shift the signal to a much lower frequency. We can then use tools such as discrete fourier transforms and digital filters to futher manipulate our signal to extract the underlying information we are looking for.
-
-
-% In the first section of this report, I discuss methods of Fourier analysis---in particular using discrete Fourier transforms, or DFTs---which I will use throughout the lab to uncover the frequency composition of digital waveforms. In the section section, we investigate digital sampling and in particular the Nyquist criterion. In the third section, we experiment with heterodyne mixing, both in analog and in digital. Finally, in the finaly section we use these techniques and an FIR filter to create a digital down converter that mixes a signal with a local oscillator and filters the signal digitally.
+Luckily, knowing the limitations of digital sampling also allows us to determine ways in which we can save time/energy/memory without losing important information about the radio signals we are trying to study. In cases where we are dealing with frequencies much greater than can be handled by our equipment, we will want to use downconversion methods to shift the signal to a much lower frequency. This involves heterodyne mixing to create sidebands in the frequency domain, followed by digital filters to extract the underlying information we are looking for.
 
 \section{Methods and Results}
 
@@ -49,7 +46,7 @@ When dealing with digitally sampled data, however, we can no longer use the inte
 \end{eqnarray}
 in which $N$ is the total number of sampled data points and $\Delta{t}$ is the timestep between samples $\left( 1/\nu_{samp} \right)$.
 
-The na\"{i}ve implementation of this algorithm---which loops through frequencies in the range $-\frac{1}{2\Delta{t}}$ to $\frac{1}{2\Delta{t}}$ in steps of $\frac{1}{\Delta{t}}$---runs in $O\left(n^2\right)$ time, and thus is not suited to large datasets. However, in this lab I will use the more efficient \texttt{fft} (Fast Fourier Transform) algorithm for computing discrete Fourier transforms, provided by Python's scientific computing package NumPy. This algorithm's running time scales as $O\left( n \log_2(n) \right)$ and thus is suitable for large datasets.
+The na\"{i}ve implementation of this algorithm---which loops through frequencies in the range $-\frac{1}{2\Delta{t}}$ to $\frac{1}{2\Delta{t}}$ in steps of $\frac{1}{\Delta{t}}$---runs in $O\left(n^2\right)$ time, and thus is not suited to large datasets. However, in this lab I will Numpy's implementation of the \texttt{fft} (Fast Fourier Transform) algorithm for computing discrete Fourier transforms. This algorithm's running time scales as $O\left( n \log_2(n) \right)$ and thus is suitable for large datasets.
 
 Figures in the upcoming sections that contain plots of a power spectrum are created by first computing the \texttt{fft} of the waveform of interest, taking the magnitude of the complex output (using Python's \texttt{abs} function), and squaring the resulting values.
 
@@ -210,7 +207,7 @@ The result of our Fourier filter containing both real and imaginary components i
 
 The primary advantage of SSB mixing is that only one of the two possible sidebands are produced. For a real-valued signal, the output will include two different frequencies, as opposed to four in the DSB case. However, to prevent the unwanted sidebands from sneaking into the output, the real and complex components of the local oscillator must be held at exactly a quarter period out of phase---if they are off of this phase we will start to see the unwanted sideband in the output spectrum.
 
-Because of this phase requirement, it is difficult to implement an \textit{analog} SSB mixer since it is difficult to keep analog signals in perfect phase at many different frequencies. Since the digital version of the SSB uses the ROACH's clock rate to sync the real and imaginary components of the local oscillator, those components will always be at the same frequency and the phase can be adjusted programmatically if they are sligthly off. Another disadvantage to analog mixing is that you can be limited by the bandwidth of the equipment you are using; the ZAD-1's ``L" and `R" ports do not couple to DC or low frequencies of a few kHz.
+Because of this phase requirement, it is difficult to implement an \textit{analog} SSB mixer since it is difficult to keep analog signals in perfect phase at many different frequencies. Since the digital version of the SSB uses the ROACH's clock rate to sync the real and imaginary components of the local oscillator, those components will always be at the same frequency and the phase can be adjusted programmatically if they are sligthly off. Another disadvantage to analog mixing is that you are limited by your equipment's bandwidth; according to the lab manual, the ZAD-1's ``L" and ``R" ports do not work well with low frequencies.
 
 As far as effort goes, it is much simpler to implement a DSB mixer and then filter out the unwanted frequencies, either digitally or using an analog circuit. Figure \ref{fig:analogmixing_signal} and Figure \ref{fig:ssb} show an analog DSB and digital SSB mixer respectively. Once a Fourier filter is applied, they both extract the desired signal equally well; thus I think it usually would make more sense to implement a simple analog mixer, and deal with filtering out unwanted frequencies after the fact.
 
@@ -230,6 +227,7 @@ We use this functionality to implement a bandpass filter. To choose coefficients
 
 Our bandpass in this experiment is a 5/8-band filter, centered around $0$ Hz. Since our clock/sample rate is $200$ MHz, the Nyquist rate is $100$ MHz and the frequency range that we will concern ourselves with is the range $-100$ MHz to $100$ MHz. The 5/8-band filter will be a filter with a full response in 5/8 of that range centered around 0, or from $-62.5MHz$ to $62.5 MHz$. Elsewhere, the filter's response should be zero, as depicted in Figure \ref{fig:fir}. To be able to take the discrete inverse fourier transform of this, we take eight equally spaced samples from the ideal filter and use the inverse discrete Fourier transform algorithm from NumPy's \texttt{fft} module. The points taken in the frequency domain and the corresponding complex coefficients in the time domain are enumerated in the following table:
 
+\begin{table}
 \begin{center}
   \begin{tabular}{ c | c }
     $\nu$ [MHz] & Power \\ \hline
@@ -255,11 +253,12 @@ Our bandpass in this experiment is a 5/8-band filter, centered around $0$ Hz. Si
     35 & \texttt{-0.0517...} & $0$ \\
   \end{tabular}
 \end{center}
+\end{table}
 
 
 One thing to note is that the imaginary coefficients are all zero. This can be understood by noticing that the 5/8-band filter is symmetric around zero. As we have seen earlier in the lab in our DSB mixers, this symmetry between positive and negative frequency is indicative of a real-valued function.
 
-Since we are using a filter that only convolutes over 8 time steps, we have only fixed our filter's response at the 8 frequencies that we choose. However, the waveform entering the filter can of course contain arbitrary frequency values. To determine the filter's actual expected response as a function of frequency, we can ``pad" the time domain filter with zeroes to increase the amount of time it covers. This way, when we fourier transform our time domain waveform back into the frequency domain, we will have much higher resolution and will see what our filter looks like at frequencies in between the eight discrete points that we chose earlier. The dashed line in Figure \ref{fig:fir} represents this response. This filter contains ripples that do not exist in the ideal filter due to the fact that our discrete inverse Fourier transform over only eight points is not capable of encoding such a high resolution in the frequency domain. To create a \textit{perfect} square filter, one would theoretically have to create a filter that covolutes time steps starting from the beginning of time up until the end of time, and ain't nobody got time for that.
+Since we are using a filter that only convolutes over 8 time steps, we have only fixed our filter's response at the 8 frequencies that we choose. However, the waveform entering the filter can of course contain arbitrary frequency values. To determine the filter's actual expected response as a function of frequency, we can ``pad" the time domain filter with zeroes to increase the amount of time it covers. This way, when we transform our time domain waveform back into the frequency domain, we will have much higher resolution and will see what our filter looks like at frequencies in between the eight discrete points that we chose earlier. The dashed line in Figure \ref{fig:fir} represents this response. This filter contains ripples that do not exist in the ideal filter due to the fact that our discrete inverse Fourier transform over only eight points is not capable of encoding such a high resolution in the frequency domain. To create a \textit{perfect} square filter, one would theoretically have to create a filter that covolutes time steps starting from the beginning of time up until the end of time, and ain't nobody got time for that.
 \begin{figure}[H]
 \center{
   \includegraphics[width=350px]{firfrequency}
@@ -273,16 +272,15 @@ Since we are using a filter that only convolutes over 8 time steps, we have only
 \end{figure}
 
 \subsubsection{Testing Filter Response}
-To test our FIR filter's response as a function of frequency, we want to compare how the power spectrum of a waveform looks with and without the filter applied. For purposes of this experiment, the response of the filter at a frequency $\nu$ is the ratio of the power at that frequency with the filter to the power at that frequency without the filter, $P_{filtered}/P_{unfiltered}$. For example, If the power spectrum has a large spike at a frequency $10$ MHz without the filter, but a spike half as large at $10$ MHz with the filter, then the response of the filter at $10$ MHz is $0.5$. 
+To test our FIR filter's response as a function of frequency, we want to compare how the power spectrum of a waveform looks with and without the filter applied. For purposes of this experiment, the response of the filter at a frequency $\nu$ is the ratio of the power at that frequency with the filter to the power at that frequency without the filter, $P_{filtered}/P_{unfiltered}$.
 
-The way we can see the expected magnitude in the power spectrum is by using the FIR filter with all coefficients set to zero except for one set to the maximal possible value (a close to one as possible). This essentially reproduces the original signal as output because the FIR is simply convoluting the incoming signal with a delta function of magnitude 1---each point of the incoming signal is simply recreated in the output as it is ``dragged" across the delta function filter.
+To generate the unfiltered power spectrum, we use the FIR filter with all coefficients set to zero except for one set to the maximal possible value (a close to one as possible). This essentially reproduces the original signal as output because the FIR is simply convoluting the incoming signal with a delta function of magnitude 1---each point of the incoming signal is simply recreated in the output as it is ``dragged" across the delta function filter.
 
-To probe many frequencies in our range of $-100$ MHz to $100$ MHz, we use the digital SSB mixing techniques of the previous section. The SRS Signal Generator can only produce signals up to $30$ MHz; thus, to get larger signal frequencies we will mix our signal with LO frequencies that will produce upper and lower sidebands to span this range.
+The SRS Signal Generator can only produce signals up to $30$ MHz. To discern the shape of our filter in the entire range $-100$ MHz to $100$ MHz, we use the SSB mixing techniques of the previous section to get larger signal frequencies. We vary the LO frequency such that our upper and lower sidebands will span this range.
 
-We use a $25$ MHz signal at $0$ dBm, mixed with LO frequencies ranging from $5$ MHz to $50$ MHz. Since we will combine real and imaginary parts programmatically, we can add them in both forms described by Eq. \ref{eq:mixingexp} to produce upper and lower sidebands.
+We use a $25$ MHz signal at $0$ dBm, mixed with LO frequencies ranging from $5$ MHz to $50$ MHz. Since we will combine real and imaginary parts programmatically, we can add them in both forms described by Eq. \ref{eq:mixingexp} to produce upper and lower sidebands. At each of these frequencies, enumerated in the upcoming table, we can determine our filter's response.
 
-After collecting these mixed waveforms with and without the FIR filter applied, we square the magnitude of the DFT of our convolved waveform to get the power spectrum. Each sideband that we create, enumerated in the upcoming table, represents a single datapoint at which the response is the ratio of the filtered spike's size to the unfiltered spike's size.
-
+\begin{table}
 \begin{center}
   \begin{tabular}{c | c | c }
     LO Freq. [MHz] & Upper Sidebands [MHz] & Lower Sidebands [MHz] \\ \hline
@@ -297,10 +295,22 @@ After collecting these mixed waveforms with and without the FIR filter applied, 
     50.0 & 75.0, 25.0 & -25.0, -75.0 \\
     \end{tabular}
 \end{center}
+\caption{All intermediate frequencies that we will generate to characterize our filter's response.}
+\label{tbl:firfrequencies}
+\end{table}
 
-For each of these LO settings, we collect data twice---once with the coefficients for our 5/8-band filter, and again with all coefficients zero except for one (to normalize the output strength).
+\begin{figure}[H]
+\center{
+  \includegraphics[width=350px]{fircompare}
+}
+\caption[SODUMB]{A comparison of spectral features with and without the FIR 5/8-band filter applied. Both are shown on the same scale.}
+\label{fig:fircompare}
+\end{figure}
 
-We take the ratio $P_{filtered} / P_{unfiltered}$ at all these frequencies, and get the results in Figure \ref{fig:firresponse}. They follow very closely to the predicted response, which is to be expected because the filtering and mixing was all done digitally. The fact that the response matches expectation well is still very apparent.
+After collecting a mixed waveform and combining the real and imaginary parts, we generate the power spectrum by squaring the magnitude of its DFT. At each of the frequencies in Table \ref{tbl:firfrequencies}, we have two datasets containing that feature: one unfiltered and one with our FIR filter applied, all of which are shown in Figure \ref{fig:fircompare}.
+
+We next take the ratio of the filtered spike's size to the unfiltered spikes size to determine the response, $P_{filtered} / P_{unfiltered}$. Our results are in Figure \ref{fig:firresponse}. It is clear that our measured response curve follow very closely to the shape and magnitude of the predicted response (no extra scaling or normalization was done).
+
 \begin{figure}[H]
 \center{
   \includegraphics[width=450px]{firresponse}
@@ -313,11 +323,9 @@ We take the ratio $P_{filtered} / P_{unfiltered}$ at all these frequencies, and 
 
 In testing the Nyquist criterion, we find that signals of all frequencies up to one-half the sampling rate can be sampled successfully. Though sampling faster can produce a more faithful representation of a signal in the time domain, there is not a huge difference in the frequency domain representation of the signal (the power spectrum) for faster sampling rates. In practical application, it may be most economical to sample as slowly as possible without violating the Nyquist limit, since the spectral information will be preserved while keeping the data files smaller. However, one should avoid sampling at \textit{exactly} the Nyquist frequency as the potential for a misleading ``flat" waveform is possible in this case.
 
-Additionally, explored both analog and digital methods of DSB and SSB mixing and were able to compare the advantages and disadvantages of each. We find that it is possible to implement a SSB mixer digitally but it is more complicated and requires more resources than an analog DSB mixer. The output of the analog DSB can be filtered using techniques like Fourier filtering in order to extract a comparable result to that of the SSB method. 
+Additionally, explored both analog and digital methods of DSB and SSB mixing and were able to compare the advantages and disadvantages of each. We find that it is possible to implement a SSB mixer digitally but it is more complicated and requires more resources than an analog DSB mixer. The output of the analog DSB can be filtered using techniques like Fourier filtering in order to extract a comparable result to that of the SSB method. However, digital mixing could be necessary if the frequencies in the signal lie outside the analog mixer's bandwidth. 
 
-Finally, the FIR filter.
-
-
+Finally, we learned another method of digital filtering in the downconversion process using FIR. This is another method through which we can filter out the unwanted frequencies from a DSB mixer. We are limited by how many samples we can tap down in the covolution process; when trying to recreate a perfect 5/8-band filter, we found that the best response we could get with only 8 sample points was the rippled structure of Figure \ref{fig:firresponse}. However, for purposes of isolating a certain frequency, the rippled shape of the response will work fine because the important feature of the response is that it is zero for frequencies outside the bandwidth. Combining this with appropriately chosen sampling rates and a heterodyne mixer will allow us to convert radio signals into forms that they can be studied.
 
 \section{Acknowledgement}
 I would like to thank my lab partners Maissa and Sal for their work in getting us through this lab. Also thanks to the lab instructors Aaron Parsons, Karto Keating, and Baylee Bordwell for teaching us the lab material, helping us with debugging the ROACH, and sustaining us with baked goods. Especially to Karto for providing us with with the now defunct \texttt{set\_srs}, which automagically just worked data collection so much easier.
@@ -327,7 +335,7 @@ All figures were done in Python using the Numpy and Matplotlib libraries.
 \subsection{Converting FIR Coefficients to Binary}
 When implementing a FIR filter, the FPGA reads 18 bit\footnote{The register holds 32 bits but only 18 bits are used.}, fixed point, 2's complement numbers from the \texttt{coeff} registers, with 17 digits after the binary point. The smallest bit, therefore, will represent the value $2^{-17}$, and the range of values that can be represented go from $-1$ to $1-2^{-17}$. A easy way to convert a decimal value into this odd representation is to divide that number by $2^{-17}$, and then fill in the preceding bits with zeroes up to the full 32 bits.
 
-This table shows the coefficients\footnote{I truncated the decimal for sake of space. However, the coefficients were determined using \texttt{np.fft} with floating point precision; the binary and hex columns include as much precision as NumPy was willing to offer.} we wanted to use in our 5/8-band filter, as well as their binary representation in this representation and their hexadecimal representation.
+This table shows the coefficients\footnote{I don't show all the decimal values for sake of space. However, the coefficients were determined using \texttt{np.fft} with floating point precision; the binary and hex columns include as much precision as NumPy was willing to offer.} we wanted to use in our 5/8-band filter, as well as their binary representation in this representation and their hexadecimal representation.
 
 \begin{center}
   \begin{tabular}{ l | c | c }
