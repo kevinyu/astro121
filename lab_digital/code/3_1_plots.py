@@ -30,7 +30,7 @@ plot([-150,150], [0,0], "k:")
 plot(discrete_t, discrete_transform.real, "rs", markersize=8, label="Time Domain Coefficients")
 xlim(-20, 20)
 ylim(-.2, .7)
-xlabel("Frequency (MHz)")
+xlabel("t (ns)")
 ylabel("Value")
 
 figure(1)
