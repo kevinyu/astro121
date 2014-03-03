@@ -2,6 +2,7 @@
 from pylab import *
 
 from unfuckup import unfuckup
+from legendary import Legendary
 
 ideal_f = np.array(range(150) + range(-150, 0))
 discrete_f = np.array(range(0, 100, 25) + range(-100, 0, 25))
@@ -59,5 +60,32 @@ plot(unfuckup(np.fft.fftfreq(len(actual_filter), 1/200.)), unfuckup(abs(actual_f
 from test_fir import data
 plot(data[:, 0]*1e-6, data[:, 1], "o", markersize=8, label=r"Actual Response: $P_{filtered}/P_{unfiltered}$")
 legend()
-# xlabel("Frequency (MHz)", fontsize=16)
-# ylabel(, fontsize=16)
+
+# show the norm vs actual
+figure()
+# plot(data[:, 0]*1e-6, data[:, 2], "^", markersize=10, label=r"Filtered Features")
+# plot(data[:, 0]*1e-6, data[:, 3], "v", markersize=10, label=r"Unfiltered Features")
+
+ylim(0, 4.5e17)
+plot([0,0], ylim(), "k:")
+for f, p, actual, unfiltered in data:
+    plot([f*1e-6, f*1e-6], [0, unfiltered], "r-", linewidth=5, alpha=.3)
+    plot([f*1e-6, f*1e-6], [0, actual], "b-", linewidth=2)
+xlabel("Frequency (MHz)", fontsize=14)
+ylabel("Power", fontsize=14)
+
+l = Legendary()
+l[1] = {
+    "label": r"Unfiltered spectral features ($P_{unfiltered}$)",
+    "color": "Red",
+    "linestyle": "-",
+    "linewidth": 5,
+    "alpha": 0.3
+}
+l[0] = {
+    "label": r"FIR filtered spectral features ($P_{filtered}$)",
+    "color": "Blue",
+    "linestyle": "-",
+    "linewidth": 2
+}
+l.draw()

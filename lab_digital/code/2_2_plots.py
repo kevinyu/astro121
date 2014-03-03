@@ -127,7 +127,7 @@ plot(1e-6 * unfuckup(np.fft.fftfreq(len(full_wave), 1./f_sample)), 1e-18 * unfuc
 LO_freq = lofreq / 256. * 200
 ylim(1e-5, ylim()[1]*10)
 bleh = ylim()
-semilogy([0, 0], bleh, "k--", label=r"$\nu_{LO}=%.3fMHz$" % LO_freq)
+semilogy([0, 0], bleh, "k:")
 text(-9, 1, r"$%.3f MHz$" % (-LO_freq - 6), fontsize=16)
 text(-4, .1, r"$%.3f MHz$" % (-LO_freq), fontsize=16)
 text(3, 1, r"$%.3f MHz$" % (-LO_freq + 6), fontsize=16)
@@ -138,8 +138,9 @@ xlabel("Frequency (MHz)", fontsize=14)
 ylabel("Power", fontsize=14)
 
 subplot(211)
-tfilt, vfilt = fourier_filter(output, 200e6, kill_freqs=(2.875e6, -9.125e6), kill_radius=5)
+tfilt, vfilt = fourier_filter(output, 200e6, kill_freqs=(-3.125e6, -9.125e6), kill_radius=5)
 plot(tfilt * 1e6, 1e-6 * vfilt.real, "k-", linewidth=5, label="Re[Filtered]")
 plot(tfilt * 1e6, 1e-6 * vfilt.imag, "k-", linewidth=5, alpha=0.5, label="Im[Filtered]")
+xlim(3.9, 5.1)
 
 legend(fontsize=14)

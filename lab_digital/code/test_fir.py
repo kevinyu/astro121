@@ -6,8 +6,6 @@ from unfuckup import unfuckup
 datapoints = []
 threshold = 1e17  # if a point is higher than this in the unfiltered power specturm, take it as a datapoint
 for x in [4, 16, 32, 40, 46, 48, 50, 56, 64]:
-    dalo = (200 * x / 256.)
-    print dalo, "&", dalo + 25, ",", dalo-25, "&", 25 - dalo, ",", -dalo-25, r"\\"
     norm_real = np.fromfile("../data/roach/norm-lo-%s/ddc_real_bram" % x, ">i")
     norm_imag = np.fromfile("../data/roach/norm-lo-%s/ddc_imag_bram" % x, ">i")
     actual_real = np.fromfile("../data/roach/FIR-lo-%s/ddc_real_bram" % x, ">i")
@@ -19,7 +17,7 @@ for x in [4, 16, 32, 40, 46, 48, 50, 56, 64]:
 
     for i, freq in enumerate(np.fft.fftfreq(len(norm_fft), 1/200e6)):
         if norm_fft[i] > threshold:
-            datapoints.append([freq, actual_fft[i]/norm_fft[i]])
+            datapoints.append([freq, actual_fft[i]/norm_fft[i], actual_fft[i], norm_fft[i]])
     # plot(unfuckup(abs(norm_fft)**2))
     # plot(unfuckup(abs(actual_fft)**2))
     # plot(unfuckup(abs(actual_fft)**2 / abs(norm_fft)**2))
@@ -32,7 +30,7 @@ for x in [4, 16, 32, 40, 46, 48, 50, 56, 64]:
 
     for i, freq in enumerate(np.fft.fftfreq(len(norm_fft), 1/200e6)):
         if norm_fft[i] > threshold:
-            datapoints.append([freq, actual_fft[i]/norm_fft[i]])
+            datapoints.append([freq, actual_fft[i]/norm_fft[i], actual_fft[i], norm_fft[i]])
 
 data = np.array(datapoints)
 
