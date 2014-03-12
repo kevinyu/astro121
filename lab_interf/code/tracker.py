@@ -152,7 +152,8 @@ if __name__ == "__main__":
                 " i.e. python tracker.py m17")
     if objkey not in OBJECTS:
         raise Exception("{objkey} not configured with RA, DEC"
-                "or with a pyephem object".format(objkey=objkey))
+                " or with a pyephem object. Choose from:\n{options}"
+                .format(objkey=objkey, options=OBJECTS.keys()))
 
     session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
     log_handler = logging.FileHandler(os.path.join(LOGDIR, "tracking.log"))
