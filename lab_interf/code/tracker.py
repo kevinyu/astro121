@@ -25,7 +25,7 @@ LOGDIR = "logs"
 DATADIR = "data"
 
 # setup logging
-logger = logging.Logger("__root__")
+logger = logging.Logger("caniputanythinghere")
 # add handler at bottom in script
 # TODO: maybe use a more relevant timestamp on log?
 formatter = logging.Formatter('%(asctime)s %(levelname)s - %(message)s')
@@ -128,9 +128,9 @@ def get_counter():
     if not os.path.exists(counterfile):
         x = 0
     else:
-        with open("counter", "r") as counterfile:
+        with open(counterfile, "r") as counterfile:
             x = int(counterfile.read())
-    with open("counter", "w+") as counterfile:
+    with open(counterfile, "w+") as counterfile:
         counterfile.write(str(x + 1))
     return x
 
