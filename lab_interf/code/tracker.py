@@ -16,11 +16,13 @@ LAT = 37.8732  # deg
 POINT_INTERVAL = 60.  # repoint every minute
 HOME_INTERVAL = 60. * 60.  # point home every hour
 ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
-OBJECTS = dict(
-    sun = {"obj": ephem.Sun()},
-    moon = {"obj": ephem.Moon()},
-    m17 = {"ra": np.deg2rad(275.1083), "dec": np.deg2rad(-16.1767)}
-)
+OBJECTS = {
+    "sun": {"obj": ephem.Sun()},
+    "moon": {"obj": ephem.Moon()},
+    "m17": {"ra": ephem.hours("18:20:26"), "dec": ephem.degrees("16:10.6")},
+    "3C144": {"ra": ephem.hours("5:34:31.95"), "dec": ephem.degrees("22:00:51.1")},
+    "orion": {"ra": ephem.hours("5:35:17.3"), "dec": ephem.degrees("-05:24:28")},
+}
 LOGDIR = "logs"
 DATADIR = "data"
 
@@ -47,7 +49,7 @@ except:
         def pntTo(self, az, alt):
             print "rl: pointing {az} {alt}".format(az=az, alt=alt)
         def recordDVM(self, *args, **kwargs):
-            print "rl: recording data..."
+            print "rl: recording data...", args, kwargs
             while True:
                 print "take data point "
                 time.sleep(2)
@@ -62,11 +64,13 @@ class Tracker:
         logger.info("Observer set at (long, lat): {long_}, {lat}".format(
             long_=self.obs.long, lat=self.obs.lat))
 
-        if (obj and not (ra or dec)) or ((ra and dec) and not obj):
-            # this variable will be None if the object's RA and DEC are fixed
-            self.moving_obj = obj
-            self.ra = ra and ephem.hours(ra)
-            self.dec = ra and ephem.degrees(dec)
+        if (obj and not (ra or dec)):
+            self.source = obj
+        elif ((ra and dec) and not obj):
+            self.source = ephem.FixedBody()
+            self.source._ra = ephem.hours(ra)
+            self.source._dec = ephem.degrees(dec)
+            self.source._epoch = ephem.J2000  # for precessing
         else:
             raise Exception("Only use either (ra, dec) or an ephem obj.")
 
@@ -108,17 +112,14 @@ class Tracker:
         datafile = os.path.join(DATADIR, "{session}.npz".format(session=self.session))
         logger.info("Taking data for {session} to {datafile}".format(
             session=self.session, datafile=datafile))
-        radiolab.recordDVM(filename=datafile, sun=bool(self.moving_obj),
+        radiolab.recordDVM(filename=datafile, sun=type(self.source) is not ephem.FixedBody,
                 verbose=True, showplot=False)
 
     def refresh_pointing(self):
         self.obs.date = ephem.now()
-        if self.moving_obj:
-            self.moving_obj.compute(self.obs)
-            self.ra = self.moving_obj.ra
-            self.dec = self.moving_obj.dec
+        self.source.compute(self.obs)
 
-        az, alt = rd2aa(self.ra, self.dec,
+        az, alt = rd2aa(self.source.ra, self.source.dec,
                 lst=self.obs.sidereal_time(), lat=self.obs.lat)
         az = ephem.hours(az)
         alt = ephem.degrees(alt)
