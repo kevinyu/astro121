@@ -36,16 +36,19 @@ if not os.path.exists(DATADIR):
     os.makedirs(DATADIR)
 
 
-class MockRadiolab:
-    def pntHome(self):
-        print "rl: pointing home"
-
-    def pntTo(self, az, alt):
-        print "rl: pointing {az} {alt}".format(az=az, alt=alt)
-
-    def recordDVM(self, *args, **kwargs):
-        print "rl: recording data..."
-radiolab = MockRadiolab()
+try:
+    import radiolab
+except:
+    # just keep this here for now while testing
+    print "Not actually importing real radiolab!"
+    class MockRadiolab:
+        def pntHome(self):
+            print "rl: pointing home"
+        def pntTo(self, az, alt):
+            print "rl: pointing {az} {alt}".format(az=az, alt=alt)
+        def recordDVM(self, *args, **kwargs):
+            print "rl: recording data..."
+    radiolab = MockRadiolab()
 
 
 class Tracker:
@@ -116,21 +119,21 @@ class Tracker:
         az = ephem.hours(az)
         alt = ephem.degrees(alt)
         if not (ALT_LIMS[0] < alt < ALT_LIMS[1]):
-            logger.warning("Object at {az} {alt} is beyond telescope limits. Not pointing...".format(
-                az=az, alt=alt))
+            logger.warning("Object at {az} {alt} is beyond telescope limits."
+                    " Not pointing...".format(az=az, alt=alt))
             return False
         self.point(az, alt)
         return True
 
 
 def get_counter():
-    counterfile = os.path.join(LOGDIR, "counter")
-    if not os.path.exists(counterfile):
+    counterpath = os.path.join(LOGDIR, "counter")
+    if not os.path.exists(counterpath):
         x = 0
     else:
-        with open(counterfile, "r") as counterfile:
+        with open(counterpath, "r") as counterfile:
             x = int(counterfile.read())
-    with open(counterfile, "w+") as counterfile:
+    with open(counterpath, "w+") as counterfile:
         counterfile.write(str(x + 1))
     return x
 
@@ -140,7 +143,11 @@ if __name__ == "__main__":
     try:
         objkey = sys.argv[1]
     except IndexError:
-        raise Exception("Call with object of interest as command line arg; i.e. python tracker.py m17")
+        raise Exception("Call with object of interest as command line arg;"
+                " i.e. python tracker.py m17")
+    if objkey not in OBJECTS:
+        raise Exception("{objkey} not configured with RA, DEC"
+                "or with a pyephem object".format(objkey=objkey))
 
     session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
     log_handler = logging.FileHandler(os.path.join(LOGDIR, "tracking.log"))
