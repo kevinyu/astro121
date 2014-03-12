@@ -48,6 +48,9 @@ except:
             print "rl: pointing {az} {alt}".format(az=az, alt=alt)
         def recordDVM(self, *args, **kwargs):
             print "rl: recording data..."
+            while True:
+                print "take data point "
+                time.sleep(2)
     radiolab = MockRadiolab()
 
 
@@ -80,6 +83,7 @@ class Tracker:
             raise Exception("Initial pointing's ALT was out of range")
 
         self.data_thread = threading.Thread(target=self.take_data)
+        self.data_thread.daemon = True
         self.data_thread.start()
 
         while (not timelimit) or (time.time() - self.start_time <= timelimit):
