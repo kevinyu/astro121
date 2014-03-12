@@ -75,7 +75,7 @@ class Tracker:
             raise Exception("Only use either (ra, dec) or an ephem obj.")
 
         self.last_home = None
-        self.session = session or "noname-{randnum}".format(str(random.random())[-6:])
+        self.session = session or "noname-{counter}".format(counter=get_counter())
 
     def track(self, timelimit=None):
         logger.info("Tracking started. Session name: {session}".format(session=self.session))
