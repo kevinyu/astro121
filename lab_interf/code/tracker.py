@@ -140,7 +140,7 @@ if __name__ == "__main__":
     try:
         objkey = sys.argv[1]
     except IndexError:
-        raise Exception("Call with object of interest as command line arg; i.e. python controller.py m17")
+        raise Exception("Call with object of interest as command line arg; i.e. python tracker.py m17")
 
     session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
     log_handler = logging.FileHandler(os.path.join(LOGDIR, "tracking.log"))
