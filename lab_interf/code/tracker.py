@@ -13,7 +13,7 @@ from rotation import rd2aa
 # config variables
 LONG = -122.2573  # deg
 LAT = 37.8732  # deg
-POINT_INTERVAL = 60.  # repoint every minute
+POINT_INTERVAL = 2. * 60.  # repoint every 2 minutes
 HOME_INTERVAL = 60. * 60.  # point home every hour
 ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
 OBJECTS = {
@@ -45,14 +45,13 @@ except:
     print "Not actually importing real radiolab!"
     class MockRadiolab:
         def pntHome(self):
-            print "rl: pointing home"
+            time.sleep(5)
         def pntTo(self, az, alt):
-            print "rl: pointing {az} {alt}".format(az=az, alt=alt)
+            time.sleep(3)
         def recordDVM(self, *args, **kwargs):
-            print "rl: recording data...", args, kwargs
             while True:
-                print "take data point "
-                time.sleep(2)
+                print "Taking data point."
+                time.sleep(1)
     radiolab = MockRadiolab()
 
 
@@ -60,7 +59,7 @@ class Tracker:
     def __init__(self, ra=None, dec=None, obj=None, session=None):
         """Tracks an object in the sky and collects data."""
         self.obs = ephem.Observer()
-        self.obs.long, self.obs.lat = np.deg2rad(LONG), np.deg2rad(LAT)
+        self.obs.long, self.obs.lat = ephem.hours(np.deg2rad(LONG)), ephem.degrees(np.deg2rad(LAT))
         logger.info("Observer set at (long, lat): {long_}, {lat}".format(
             long_=self.obs.long, lat=self.obs.lat))
 
@@ -90,23 +89,25 @@ class Tracker:
         self.data_thread.daemon = True
         self.data_thread.start()
 
+        time.sleep(POINT_INTERVAL)
+
         while (not timelimit) or (time.time() - self.start_time <= timelimit):
             if not self.last_home or (time.time() - self.last_home >= HOME_INTERVAL):
                 self.point_home()
-            time.sleep(POINT_INTERVAL)
             self.refresh_pointing()
+            time.sleep(POINT_INTERVAL)
 
     def point_home(self):
         """Wrapper around point home"""
-        logger.info("Pointing home")
+        logger.warning("Start pointing home.")
         self.last_home = time.time()
         radiolab.pntHome()
-        logger.info("Pointing complete")
+        logger.warning("Finished pointing.")
 
     def point(self, az, alt):
-        logger.info("Pointing to (az, alt): {az} {alt}".format(az=az, alt=alt))
+        logger.warning("Start pointing to (az, alt): {az} {alt}".format(az=az, alt=alt))
         radiolab.pntTo(az=az, alt=alt)
-        logger.info("Pointing complete")
+        logger.warning("Finished pointing.")
 
     def take_data(self):
         datafile = os.path.join(DATADIR, "{session}.npz".format(session=self.session))
@@ -155,10 +156,24 @@ if __name__ == "__main__":
                 " or with a pyephem object. Choose from:\n{options}"
                 .format(objkey=objkey, options=OBJECTS.keys()))
 
-    session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
-    log_handler = logging.FileHandler(os.path.join(LOGDIR, "tracking.log"))
-    log_handler.setFormatter(formatter)
-    logger.addHandler(log_handler)
-    logger.info("*** USER REQUESTS TO TRACK {key}".format(key=objkey))
-    tracker = Tracker(session=session_name, **OBJECTS[objkey])
-    tracker.track()
+    # I have to do this tomfoolery because the data collection programs
+    # use print instead of logging
+    # this will safely open and close the logfile automatically
+    with open(os.path.join(LOGDIR, "tracking.log"), "a+") as logfile:
+        try:
+            sys.stdout = logfile
+            session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
+            log_handler = logging.StreamHandler(stream=sys.stdout)
+            log_handler.setFormatter(formatter)
+            logger.addHandler(log_handler)
+            logger.info("*** USER REQUESTS TO TRACK {key}***".format(key=objkey))
+            tracker = Tracker(session=session_name, **OBJECTS[objkey])
+            tracker.track()
+        except KeyboardInterrupt:
+            logger.info("Tracking stopped by user.")
+        else:
+            logger.error("Unexpected conclusion to tracking.")
+        finally:
+            sys.stdout = sys.__stdout__
+
+    print "Tracking session closed."
