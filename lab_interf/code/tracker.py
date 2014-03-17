@@ -159,10 +159,10 @@ if __name__ == "__main__":
     # I have to do this tomfoolery because the data collection programs
     # use print instead of logging
     # this will safely open and close the logfile automatically
-    with open(os.path.join(LOGDIR, "tracking.log"), "a+") as logfile:
+    session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
+    with open(os.path.join(LOGDIR, "{session}.log".format(session=session_name)), "a+") as logfile:
         try:
             sys.stdout = logfile
-            session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
             log_handler = logging.StreamHandler(stream=sys.stdout)
             log_handler.setFormatter(formatter)
             logger.addHandler(log_handler)
