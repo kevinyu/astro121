@@ -106,7 +106,7 @@ class Tracker:
 
     def point(self, az, alt):
         logger.warning("Start pointing to (az, alt): {az} {alt}".format(az=az, alt=alt))
-        radiolab.pntTo(az=az, alt=alt)
+        radiolab.pntTo(az=np.rad2deg(az), alt=np.rad2deg(alt))
         logger.warning("Finished pointing.")
 
     def take_data(self):
@@ -114,7 +114,7 @@ class Tracker:
         logger.info("Taking data for {session} to {datafile}".format(
             session=self.session, datafile=datafile))
         radiolab.recordDVM(filename=datafile, sun=type(self.source) is not ephem.FixedBody,
-                verbose=True, showplot=False)
+                verbose=True, showPlot=False)
 
     def refresh_pointing(self):
         self.obs.date = ephem.now()
