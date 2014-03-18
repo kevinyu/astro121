@@ -10,12 +10,6 @@ import ephem
 from rotation import rd2aa
 
 
-# config variables
-LONG = -122.2573  # deg
-LAT = 37.8732  # deg
-POINT_INTERVAL = 2. * 60.  # repoint every 2 minutes
-HOME_INTERVAL = 60. * 60.  # point home every hour
-ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
 OBJECTS = {
     "sun": {"obj": ephem.Sun()},
     "moon": {"obj": ephem.Moon()},
@@ -23,6 +17,16 @@ OBJECTS = {
     "3C144": {"ra": ephem.hours("5:34:31.95"), "dec": ephem.degrees("22:00:51.1")},
     "orion": {"ra": ephem.hours("5:35:17.3"), "dec": ephem.degrees("-05:24:28")},
 }
+
+
+# config variables
+LONG = -122.2573  # deg
+LAT = 37.8732  # deg
+POINT_INTERVAL = 2. * 60.  # repoint every 2 minutes
+HOME_INTERVAL = 60. * 60.  # point home every hour
+RETRY_TIME = 5. * 60.  # if initial pointing fails, retry in 5 minutes
+FAILURE_LIMIT = 100
+ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
 LOGDIR = "logs"
 DATADIR = "data"
 
@@ -74,16 +78,23 @@ class Tracker:
             raise Exception("Only use either (ra, dec) or an ephem obj.")
 
         self.last_home = None
-        self.session = session or "noname-{counter}".format(counter=get_counter())
+        self.session = session
 
     def track(self, timelimit=None):
+        """Start tracking for given time in seconds"""
         logger.info("Tracking started. Session name: {session}".format(session=self.session))
 
         self.point_home()
 
         self.start_time = time.time()
-        if not self.refresh_pointing():
-            raise Exception("Initial pointing's ALT was out of range")
+        failures = 0
+        while not self.refresh_pointing():
+            failures += 1
+            logger.warning("Pointing's ALT is out of range. Trying again in {retry}s".format(retry=RETRY_TIME))
+            if failures > FAILURE_LIMIT:
+                logger.error("Pointing failed more than {limit} times".format(limit=FAILURE_LIMIT))
+                sys.exit(1)
+            time.sleep(RETRY_TIME)
 
         self.data_thread = threading.Thread(target=self.take_data)
         self.data_thread.daemon = True
@@ -146,20 +157,37 @@ def get_counter():
 
 if __name__ == "__main__":
     import sys
+    import getopt
+
+    if not sys.argv[1:]:
+        print ("Arguments error: python tracker.py <obj-id>"
+            " [--time=<hours>] [--name=<session-name>]")
+        sys.exit(2)
+
     try:
-        objkey = sys.argv[1]
-    except IndexError:
-        raise Exception("Call with object of interest as command line arg;"
-                " i.e. python tracker.py m17")
+        opts, _ = getopt.getopt(sys.argv[2:], "t:n:", ["time=", "name="])
+    except getopt.GetoptError:
+        print ("Arguments error: python tracker.py <obj-id>"
+            " [--time=<hours>] [--name=<session-name>]")
+        sys.exit(2)
+
+    objkey = sys.argv[1]
     if objkey not in OBJECTS:
+        print ("Arguments error: python tracker.py <obj-id>"
+            " [--time=<hours>] [--name=<session-name>]")
         raise Exception("{objkey} not configured with RA, DEC"
                 " or with a pyephem object. Choose from:\n{options}"
                 .format(objkey=objkey, options=OBJECTS.keys()))
 
-    # I have to do this tomfoolery because the data collection programs
-    # use print instead of logging
-    # this will safely open and close the logfile automatically
-    session_name = "{objkey}-{counter}".format(objkey=objkey, counter=get_counter())
+    count = get_counter()
+    session_name = "{objkey}-{counter}".format(objkey=objkey, count))
+    observation_time = None
+    for opt, arg in opts:
+        if opt in ["-n", "--name"]:
+            session_name = arg + str(count)
+        elif opt in ["-t", "--time"]:
+            observation_time = float(arg) * 60. * 60.  # convert to seconds
+
     with open(os.path.join(LOGDIR, "{session}.log".format(session=session_name)), "a+") as logfile:
         try:
             sys.stdout = logfile
@@ -168,11 +196,14 @@ if __name__ == "__main__":
             logger.addHandler(log_handler)
             logger.info("*** USER REQUESTS TO TRACK {key}***".format(key=objkey))
             tracker = Tracker(session=session_name, **OBJECTS[objkey])
-            tracker.track()
+            tracker.track(timelimit=observation_time)
         except KeyboardInterrupt:
-            logger.info("Tracking stopped by user.")
-        else:
+            logger.warning("Tracking stopped by user.")
+        except:
             logger.error("Unexpected conclusion to tracking.")
+            raise
+        else:
+            logger.warning("Tracking finished.")
         finally:
             sys.stdout = sys.__stdout__
 
