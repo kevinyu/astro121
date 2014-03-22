@@ -16,6 +16,7 @@ OBJECTS = {
     "m17": {"ra": ephem.hours("18:20:26"), "dec": ephem.degrees("16:10.6")},
     "3C144": {"ra": ephem.hours("5:34:31.95"), "dec": ephem.degrees("22:00:51.1")},
     "orion": {"ra": ephem.hours("5:35:17.3"), "dec": ephem.degrees("-05:24:28")},
+    "m87": {"ra": ephem.hours("12:30:49.423"), "dec": ephem.degrees("12:23:28.04")},
 }
 
 
@@ -25,7 +26,8 @@ LAT = 37.8732  # deg
 POINT_INTERVAL = 2. * 60.  # repoint every 2 minutes
 HOME_INTERVAL = 60. * 60.  # point home every hour
 RETRY_TIME = 5. * 60.  # if initial pointing fails, retry in 5 minutes
-FAILURE_LIMIT = 100
+FAILURE_LIMIT = 100  # try for FAILURE_LIMIT * RETRY_TIME in seconds
+# set failure limit to None to try forever
 ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
 LOGDIR = "logs"
 DATADIR = "data"
@@ -91,7 +93,7 @@ class Tracker:
         while not self.refresh_pointing():
             failures += 1
             logger.warning("Pointing's ALT is out of range. Trying again in {retry}s".format(retry=RETRY_TIME))
-            if failures > FAILURE_LIMIT:
+            if FAILURE_LIMIT and failures > FAILURE_LIMIT:
                 logger.error("Pointing failed more than {limit} times".format(limit=FAILURE_LIMIT))
                 sys.exit(1)
             time.sleep(RETRY_TIME)
@@ -180,7 +182,7 @@ if __name__ == "__main__":
                 .format(objkey=objkey, options=OBJECTS.keys()))
 
     count = get_counter()
-    session_name = "{objkey}-{counter}".format(objkey=objkey, count))
+    session_name = "{objkey}-{counter}".format(objkey=objkey, counter=count)
     observation_time = None
     for opt, arg in opts:
         if opt in ["-n", "--name"]:
