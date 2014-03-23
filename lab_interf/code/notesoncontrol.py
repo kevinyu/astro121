@@ -1,5 +1,3 @@
-
-
 """
 Controlling the interferometer
 >>> import radiolab

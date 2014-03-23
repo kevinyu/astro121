@@ -8,26 +8,18 @@ import time
 import ephem
 
 from rotation import rd2aa
+from objects import OBJECTS
 
 
-OBJECTS = {
-    "sun": {"obj": ephem.Sun()},
-    "moon": {"obj": ephem.Moon()},
-    "m17": {"ra": ephem.hours("18:20:26"), "dec": ephem.degrees("16:10.6")},
-    "3C144": {"ra": ephem.hours("5:34:31.95"), "dec": ephem.degrees("22:00:51.1")},
-    "orion": {"ra": ephem.hours("5:35:17.3"), "dec": ephem.degrees("-05:24:28")},
-    "m87": {"ra": ephem.hours("12:30:49.423"), "dec": ephem.degrees("12:23:28.04")},
-}
-
-
+_minutes = 60.  # seconds (makeshift units)
 # config variables
 LONG = -122.2573  # deg
 LAT = 37.8732  # deg
-POINT_INTERVAL = 2. * 60.  # repoint every 2 minutes
-HOME_INTERVAL = 60. * 60.  # point home every hour
-RETRY_TIME = 5. * 60.  # if initial pointing fails, retry in 5 minutes
-FAILURE_LIMIT = 100  # try for FAILURE_LIMIT * RETRY_TIME in seconds
-# set failure limit to None to try forever
+POINT_INTERVAL = 2. * _minutes  # repoint every 2 minutes
+HOME_INTERVAL = 60. * _minutes  # point home every hour
+RETRY_TIME = 5. * _minutes  # if initial pointing fails, retry in 5 minutes
+# set FAILURE_LIMIT to None to try forever
+FAILURE_LIMIT = None  # try for FAILURE_LIMIT * RETRY_TIME in seconds
 ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
 LOGDIR = "logs"
 DATADIR = "data"
@@ -63,7 +55,15 @@ except:
 
 class Tracker:
     def __init__(self, ra=None, dec=None, obj=None, session=None):
-        """Tracks an object in the sky and collects data."""
+        """Tracks an object in the sky and collects data.
+
+        Takes either a pyephem object, or a ra and dec (not both)
+        Arguments:
+            ra (radians): Right ascension of object
+            dec (radians): Declination of object
+            obj (ephem.Body): Pyephem object
+            session (str): Name of observing session (name of data file)
+        """
         self.obs = ephem.Observer()
         self.obs.long, self.obs.lat = ephem.hours(np.deg2rad(LONG)), ephem.degrees(np.deg2rad(LAT))
         logger.info("Observer set at (long, lat): {long_}, {lat}".format(
@@ -83,12 +83,21 @@ class Tracker:
         self.session = session
 
     def track(self, timelimit=None):
-        """Start tracking for given time in seconds"""
+        """Main tracking function
+
+        Start tracking and launches data taking daemon thread.
+        Starts by pointing home, then will repoint the telescope every POINT_INTERVAL seconds.
+
+        Arguments:
+            timelimit (float, optional): time limit of observation session in seconds
+        """
         logger.info("Tracking started. Session name: {session}".format(session=self.session))
 
         self.point_home()
 
         self.start_time = time.time()
+
+        # We keep trying to refresh_pointing until the object can be observed
         failures = 0
         while not self.refresh_pointing():
             failures += 1
@@ -111,18 +120,20 @@ class Tracker:
             time.sleep(POINT_INTERVAL)
 
     def point_home(self):
-        """Wrapper around point home"""
+        """Wrapper around radiolab.pntHome that also logs"""
         logger.warning("Start pointing home.")
         self.last_home = time.time()
         radiolab.pntHome()
         logger.warning("Finished pointing.")
 
     def point(self, az, alt):
+        """Wrapper around radiolab.pntTo that also logs"""
         logger.warning("Start pointing to (az, alt): {az} {alt}".format(az=az, alt=alt))
         radiolab.pntTo(az=np.rad2deg(az), alt=np.rad2deg(alt))
         logger.warning("Finished pointing.")
 
     def take_data(self):
+        """Wrapper around radiolab.recordDVM that logs and sets the filename to the session name."""
         datafile = os.path.join(DATADIR, "{session}.npz".format(session=self.session))
         logger.info("Taking data for {session} to {datafile}".format(
             session=self.session, datafile=datafile))
@@ -130,6 +141,7 @@ class Tracker:
                 verbose=True, showPlot=False)
 
     def refresh_pointing(self):
+        """Updates the az, alt of the observed object, and repoints the interferometer"""
         self.obs.date = ephem.now()
         self.source.compute(self.obs)
 
@@ -146,6 +158,7 @@ class Tracker:
 
 
 def get_counter():
+    """Grabs latest value from counter file and increments it by 1 every time"""
     counterpath = os.path.join(LOGDIR, "counter")
     if not os.path.exists(counterpath):
         x = 0
@@ -161,6 +174,7 @@ if __name__ == "__main__":
     import sys
     import getopt
 
+    ### Read arguments
     if not sys.argv[1:]:
         print ("Arguments error: python tracker.py <obj-id>"
             " [--time=<hours>] [--name=<session-name>]")
@@ -180,18 +194,21 @@ if __name__ == "__main__":
         raise Exception("{objkey} not configured with RA, DEC"
                 " or with a pyephem object. Choose from:\n{options}"
                 .format(objkey=objkey, options=OBJECTS.keys()))
+    ###
 
+    # Create a unique-ish name for the session
     count = get_counter()
     session_name = "{objkey}-{counter}".format(objkey=objkey, counter=count)
     observation_time = None
     for opt, arg in opts:
         if opt in ["-n", "--name"]:
-            session_name = arg + str(count)
+            session_name = arg + "-" + str(count)
         elif opt in ["-t", "--time"]:
             observation_time = float(arg) * 60. * 60.  # convert to seconds
 
     with open(os.path.join(LOGDIR, "{session}.log".format(session=session_name)), "a+") as logfile:
         try:
+            # Send all print statements and logger statements to logfile
             sys.stdout = logfile
             log_handler = logging.StreamHandler(stream=sys.stdout)
             log_handler.setFormatter(formatter)

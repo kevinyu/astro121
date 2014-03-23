@@ -1,0 +1,27 @@
+- Using tracker.py
+
+- To use tracker.py to collect data, first open the file objects.py and add the object you want to observe to the dictionary. The key you use in the dictionary will be the first argument to the script.
+
+Ex:
+OBJECTS = {"sun": {"obj": ephem.Sum()}}
+
+- To begin observing the object, go the command line and run the script with the object's key as the first argument
+
+Ex:
+python tracker.py sun
+
+- To name the session, which will give the log file and the data file a custom name so its easier to recognize, pass it an argument --name
+
+Ex:
+python tracker.py sun --name=sundata1
+
+- To limit the time of observation, give the command line argument --time. This is in hours!
+
+Ex:
+python tracker.py sun --name=sundata1 --time=2
+
+- To see live output of logs, put the running script in the background or detach your screen session. Then, go to the log directory, identify the log of your current observing session, and run this command:
+
+tail -f <session-name>.log
+
+This shows the last few lines of the log file, which should be constantly updating as data is being taken and the interferometer is being controlled.
