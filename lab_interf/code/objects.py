@@ -16,7 +16,7 @@ import ephem
 OBJECTS = {
     "sun": {"obj": ephem.Sun()},
     "moon": {"obj": ephem.Moon()},
-    "m17": {"ra": ephem.hours("18:20:26"), "dec": ephem.degrees("16:10.6")},
+    "m17": {"ra": ephem.hours("18:20:26"), "dec": ephem.degrees("-16:10.6")},
     # Crab Nebula:
     "3C144": {"ra": ephem.hours("5:34:31.95"), "dec": ephem.degrees("22:00:51.1")},
     # Orion Nebula:

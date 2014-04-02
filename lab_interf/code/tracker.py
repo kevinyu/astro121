@@ -17,10 +17,10 @@ LONG = -122.2573  # deg
 LAT = 37.8732  # deg
 POINT_INTERVAL = 2. * _minutes  # repoint every 2 minutes
 HOME_INTERVAL = 60. * _minutes  # point home every hour
-RETRY_TIME = 5. * _minutes  # if initial pointing fails, retry in 5 minutes
+# RETRY_TIME = 5. * _minutes  # if initial pointing fails, retry in 5 minutes
 # set FAILURE_LIMIT to None to try forever
 FAILURE_LIMIT = None  # try for FAILURE_LIMIT * RETRY_TIME in seconds
-ALT_LIMS = (np.deg2rad(17), np.deg2rad(85))
+ALT_LIMS = (15., 87.)
 LOGDIR = "logs"
 DATADIR = "data"
 
@@ -43,9 +43,9 @@ except:
     print "Not actually importing real radiolab!"
     class MockRadiolab:
         def pntHome(self):
-            time.sleep(5)
+            time.sleep(0)
         def pntTo(self, az, alt):
-            time.sleep(3)
+            time.sleep(0)
         def recordDVM(self, *args, **kwargs):
             while True:
                 print "Taking data point."
@@ -97,15 +97,7 @@ class Tracker:
 
         self.start_time = time.time()
 
-        # We keep trying to refresh_pointing until the object can be observed
-        failures = 0
-        while not self.refresh_pointing():
-            failures += 1
-            logger.warning("Pointing's ALT is out of range. Trying again in {retry}s".format(retry=RETRY_TIME))
-            if FAILURE_LIMIT and failures > FAILURE_LIMIT:
-                logger.error("Pointing failed more than {limit} times".format(limit=FAILURE_LIMIT))
-                sys.exit(1)
-            time.sleep(RETRY_TIME)
+        self.refresh_pointing()
 
         self.data_thread = threading.Thread(target=self.take_data)
         self.data_thread.daemon = True
@@ -127,9 +119,9 @@ class Tracker:
         logger.warning("Finished pointing.")
 
     def point(self, az, alt):
-        """Wrapper around radiolab.pntTo that also logs"""
+        """Wrapper around radiolab.pntTo that also logs, pass as degrees"""
         logger.warning("Start pointing to (az, alt): {az} {alt}".format(az=az, alt=alt))
-        radiolab.pntTo(az=np.rad2deg(az), alt=np.rad2deg(alt))
+        radiolab.pntTo(az=az, alt=alt)
         logger.warning("Finished pointing.")
 
     def take_data(self):
@@ -141,18 +133,24 @@ class Tracker:
                 verbose=True, showPlot=False)
 
     def refresh_pointing(self):
-        """Updates the az, alt of the observed object, and repoints the interferometer"""
+        """Updates the az, alt of the observed object, and repoints the interferometer
+        """
         self.obs.date = ephem.now()
         self.source.compute(self.obs)
 
-        az, alt = rd2aa(self.source.ra, self.source.dec,
-                lst=self.obs.sidereal_time(), lat=self.obs.lat)
-        az = ephem.hours(az)
-        alt = ephem.degrees(alt)
+        az = np.rad2deg(self.source.az)
+        alt = np.rad2deg(self.source.alt)
+
+        # i should clean this up
         if not (ALT_LIMS[0] < alt < ALT_LIMS[1]):
             logger.warning("Object at {az} {alt} is beyond telescope limits."
-                    " Not pointing...".format(az=az, alt=alt))
-            return False
+                    "".format(az=az, alt=alt))
+
+        if alt < ALT_LIMS[0]:
+            alt = ALT_LIMS[0]
+        elif alt > ALT_LIMS[1]:
+            alt = ALT_LIMS[1]
+
         self.point(az, alt)
         return True
 
