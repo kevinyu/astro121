@@ -15,12 +15,12 @@ _minutes = 60.  # seconds (makeshift units)
 # config variables
 LONG = -122.2573  # deg
 LAT = 37.8732  # deg
-POINT_INTERVAL = 2. * _minutes  # repoint every 2 minutes
+POINT_INTERVAL = 0.5 * _minutes  # repoint every 30 seconds
 HOME_INTERVAL = 60. * _minutes  # point home every hour
 # RETRY_TIME = 5. * _minutes  # if initial pointing fails, retry in 5 minutes
 # set FAILURE_LIMIT to None to try forever
 FAILURE_LIMIT = None  # try for FAILURE_LIMIT * RETRY_TIME in seconds
-ALT_LIMS = (15., 87.)
+ALT_LIMS = (17., 85.)
 LOGDIR = "logs"
 DATADIR = "data"
 
