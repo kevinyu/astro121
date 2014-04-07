@@ -107,16 +107,6 @@ class Analyzer:
         return medianed
 
 
-def bessel(fR):
-    N = 1000.
-    return sum(
-            np.sqrt(1.0 - (n/N)**2.0) *
-            np.cos(2.0*np.pi*fR*n/N)
-            for n in np.arange(-N, N)
-    )
-
-
-def find_indexes_of_zero_crossings(y):
-    return [i for i in range(len(y)-1) if (y[i] * y[i+1] < 0.0) or (y[i] == 0)]
-
-
+def find_roots(x, y):
+    indicies = [i for i in range(len(y)-1) if (y[i] * y[i+1] < 0.0) or (y[i] == 0)]
+    return [np.mean([x[i], x[i+1]]) for i in indicies]

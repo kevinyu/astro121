@@ -4,9 +4,9 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
-from fringe_funcs import fringe_freq
+from fringe_funcs import fringe_freq, bessel
 from lsq import fit_components
-from utils import FourierFilter, Analyzer, bessel, find_indexes_of_zero_crossings
+from utils import FourierFilter, Analyzer, find_roots
 
 
 B = 10.06
@@ -31,11 +31,11 @@ sun.flatten_invalid_points()
 
 suncopy = sun.copyslice(8000, 21000)
 
-phi_to_try = np.arange(0.0, np.pi, np.pi/600.)
+# phi_to_try = np.arange(0.0, np.pi, np.pi/600.)
 
-s2s = []
-Y_s = []
-a_s = []
+# s2s = []
+# Y_s = []
+# a_s = []
 
 positive_values = suncopy["volts"] >= 0.0
 enveloper = FourierFilter(max_freq=0.01)
@@ -55,7 +55,10 @@ ha2 = (-C2 - np.sqrt(C2**2. - 4*C1*C3)) / (2.*C3)
 print ha1
 print ha2
 
-
+# Get theoretical MF values from bessel function
+fR_range = np.arange(-2.0, 2.0, 0.0005)
+bessel_y = bessel(fR_range)
+expected_roots = find_roots(fR_range, bessel_y)
 
 
 
