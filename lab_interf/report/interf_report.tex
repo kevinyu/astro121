@@ -1,0 +1,123 @@
+\documentclass[12pt]{article}
+\usepackage{graphicx}
+\usepackage{fullpage}
+\usepackage{float}
+\usepackage[symbol]{footmisc}
+\graphicspath{{../images/}}
+\usepackage{titlesec}% http://ctan.org/pkg/titlesec
+\titleformat{\section}%
+  [hang]% <shape>
+  {\normalfont\bfseries\Large}% <format>
+  {}% <label>
+  {0pt}% <sep>
+  {}% <before code>
+\renewcommand{\thesection}{}% Remove section references...
+\renewcommand{\thesubsection}{\arabic{subsection}}%... from subsections
+
+\title{Radio Interferometry}
+\author {
+Kevin Yu
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Radio interferometry provides us a powerful tool of observing the sky in a fourier space. We use a radio interferometer to observe the Sun, the Moon, and (point source). We are able to approximate their declinations and measure the diameter of the Sun and the Moon to be (values).
+\end{abstract}
+
+\section{Introduction}
+We can use interferometry for stuff
+
+In the first section, we discuss the equipment being used and how interferometry works (basically).
+
+In the next section, we discuss the fringe pattern.
+
+In the next section, we discuss methods of using an observation of a point source to measure its declination, by fitting the fringe pattern. This includes fourier filtering and methods of least squares fitting. 
+
+In the next section, we discuss how a non-point source forces us to integrate the fringe pattern over the source.
+
+Finally, we will use that to meausure the angular diameters of the sun and the moon. This includes how we find the zero crossings of the observational data, and how we vary R in the theoretical bessel function to minimzie the deviation between our zero crossings and the observaitons.
+
+\section{Methods}
+The interferometer consists of two radio dishes separated along an approximately East-West baseline. The baseline separation between the two dishes is approximately $B = 10$ m. We observe radiation at $\lambda = 2.5$ cm wavelengths.
+
+Interferometry depends on the time-delay between the detection of a plane wave at each receiver. This time-delay $\tau$ varies as the source moves across the sky and is dependent on a couple factors: the geometrical difference in distance between the two detectors and the speed of light, $c$.
+
+Because we are on a E-W baseline, our geometrical time-delay is described by this expression:
+\begin{equation}
+\tau = \left( \frac{B}{c} \right) \cos{\delta} \cos{h_a}
+\end{equation}
+in which $B$ is the baseline distance, $\delta$ is the declination of the object, and $h_a$ is the hour-angle of the object\footnote{This is a coordinate relative to the observer, equal to the observer's local sidereal time and the object's right ascension.}.
+
+Once the two detectors are correlated, we must also consider the cable delay, $\tau_c$. The voltage we detect should be described by this expression (CITE lab manual).
+\begin{equation}
+F(h_a) = \cos{2\pi \nu \tau_c} \cos{\left( 2\pi \frac{B}{\lambda} 
+\cos{\delta} \sin{h_a} \right)} - \sin{2\pi \nu \tau_c} \sin{\left( 2\pi \frac{B}{\lambda} 
+\cos{\delta} \sin{h_a} \right)} \label{eq:fringe-amplitude}
+\end{equation}
+In Eq. \ref{eq:fringe-amplitude}, $\lambda$ is the wavelength of the radiation we are observing and $\nu$ is the frequency. 
+
+This descibes a sinusoidal ``fringe pattern" whose frequency varies as the hour-angle (and declination) of the source changes. This can be applied to point sources, from which we essentially are detecting plane waves from a single location in the sky.
+
+This equation is more suited than Eq. [the other one]  to the least squares fitting method that we will employ in Section X, in which we will fit the constant coeffecients $ \cos{2\pi \nu \tau_c}$ and $ \sin{2\pi \nu \tau_c}$.
+
+The local fringe frequency at a particular declination and hour angle is:
+\begin{equation}
+f_f(h_a) = \frac{B}{\lambda} \cos{\delta} \cos{h_a} \label{eq:local-fringe-frequency}
+\end{equation}
+
+\subsection{Measuring the Baseline using 3C144}
+An accurate measurement of the baseline can be determined by fitting interferometric data for a point source  to Eq. \ref{eq:fringe-amplitude}. This equation has three unknown quantities: the time delay due to differences in cable length, $\tau_c$, the baseline $B_y$, and the declination of the target, $\delta$. For purposes of determining the baseline using 3C144, we use the documented declination of $\delta_{J2000} = 22^\circ 00'52.1''$ in order to determine $B_y$.
+
+\subsubsection{Processing 3C144 Data}
+Figure [x] shows the signal collected for just about half of the 3C144's transit across the sky. We include this dataset because although it only includes data starting from $h_a \approx 0$, it was the best dataset we collected due to other issues we had with observing (discussed later).
+
+Looking at Figure [x], we can see that our data contains a lot of noise and features that are inconsistent with a frequency modulated sinusoidal wave suggested by Eq. [simpler version of equation fringe-amplitude]. Additionally, there is a clear DC offset introduced by our equipment since the signal is not centered on zero volts.
+
+To extract the signal we are interested in, we first will use the technique of Fourier Filtering to eliminate frequencies which we know should not be seen in the 3C144 signal. First, to remove high frequency noise we note that Eq. \ref{eq:local-fringe-frequency} will reach a maximum value (during our observation) where $\cos{\delta} \cos{h_a}$ is a maximum. The same applies to the minimum value of $f_f$, which will occur when $|\cos{\delta} \cos{h_a}|$ is minimal. For our dataset, these values occur at:
+\begin{eqnarray}
+f_{f, max} = 371\ rad^{-1}\\
+f_{f, min} = 32\ rad^{-1}
+\end{eqnarray}
+Thus, we can apply a bandpass Fourier filter to our data that removes frequency components less than $f_{f, min}$ and greater than $f_{f, max}$. The resulting signal is shown in Figure [filtered-3C144], and its power spectrum after filtering in Figure [3C144-spectra].
+
+The main issue now is normalization. Our ultimate goal will be to fit the changing fringe frequency to this signal; the large amplitude modulations will prevent us from doing that. The solution is to remove the amplitude modulation by normalizing small bins of data to the size of the envelope locally. To determine the local envelope amplitude for a bin, we take the median value of the positive points in the bin and divide all points in the bin by this value. The result of this is shown in Figure bleh. This turns out to be extremely important to fitting the fringe amplitude in the next section. 
+
+\subsubsection{Fitting the Fringe to 3C144 Data}
+A least squares method can be used on this filtered data using Eq. \ref{eq:fringe-amplitude}, by minimizing the square of the residuals for particular values of $\tau_c$ and $B$. We fit both $\tau_c$ and $B$ using the following procedure:
+
+(1) We rewrite Eq. \ref{eq:fringe-amplitude} with constant coefficients filled in for the $\tau_c$ dependent factors
+\begin{equation}
+F(h_a) = C_1 \cos{\left( 2\pi \frac{B_y}{\lambda} 
+\cos{\delta} \sin{h_a} \right)} - C_2 \sin{\left( 2\pi \frac{B_y}{\lambda} 
+\cos{\delta} \sin{h_a} \right)} \label{eq:fringe-amplitude}
+\end{equation}
+
+(2) We iterate over a range of possible baseline values $B_y$, and apply a least squares fit with each one. They each will provide us with a $\Chi^2$ value and the values of $C_1$ and $C_2$.
+
+(3) The value of $B_y$ corresponding to the minimum $\Chi^2$ value gives us the least squares fit for $B_y$, $C_1$ and $C_2$.
+
+The range of baselines which we use for this is $B_y=1.00$ m to $B_y = 20.0$ m, in steps of $0.01 m$\footnote{This step size limits the precision of our measurements}. The residuals (the difference between observed and predicted signal) for each of these baselines is shown in Figure [x]; it reaches a very clear minimum value in this range at $B_y = 10.06$ m.
+
+Here, we can take a moment to savor the importance of removing the amplitude modulated envelope. Without that step, this is what happens: 
+
+Note that there are multiple local minima in the vicinity of this measurement. 
+
+\subsection{Declination of 3C144 (Crab Nebula)}
+Use the same method as above.
+
+\subsection{Repointing Frequency}
+Original measurements
+
+\subsection{The Sun}
+\subsection{The Moon}
+
+
+\section{Conclusion}
+
+
+\section{Acknowledgement}
+
+
+\end{document}
