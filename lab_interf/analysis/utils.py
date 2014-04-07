@@ -43,10 +43,10 @@ class FourierFilter:
 
 
 class Analyzer:
-    def __init__(self, datafile, logfile, dt=None, ra=None):
+    def __init__(self, datafile, logfile, dt=None, ra=None, start_at_timestamp=None):
         self.dt = dt or 1.0
         # TODO: move check_valid_points into this class
-        self.data = check_valid_points(np.load(datafile), logfile)
+        self.data = check_valid_points(np.load(datafile), logfile, start_at_timestamp=start_at_timestamp)
         self.data["t"] = np.arange(len(self.data["volts"])) * self.dt
         self.data["ha"] = self.data["lst"] - (ra or self.data["ra"])
         self.data["ha"] -= (24.0 * (self.data["ha"] > 12.0))
@@ -80,6 +80,20 @@ class Analyzer:
     def flatten_invalid_points(self):
         avg_dc = np.mean(self["volts"])
         self["volts"] = (self["volts"] * self["valid"]) + (avg_dc * (self["valid"] == False))
+
+    @property
+    def binned(self):
+        """ Normalize each chunk of 200 points to the maximum over that range """
+        start = 0
+        step = 200
+        binned = np.array(self.data["volts"])
+        while len(binned[start:start+step]):
+            # med = np.max(abs(binned[start:start+step]))
+            thebin = binned[start: start+step]
+            med = np.median(thebin[thebin > 0.0])
+            binned[start:start+step] = binned[start:start+step]
+            start += step
+        return binned
 
 
 def bessel(fR):
