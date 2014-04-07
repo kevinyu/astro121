@@ -24,7 +24,7 @@ crab.flatten_invalid_points()
 crab["volts_orig"] = crab["volts"]
 # Next we find the min and max fringe frequencies that we expect to see in the data
 # divide it into chunks since the fringe frequency changes over time
-local_fringe_frequencies = fringe_freq(10.0, 0.025, OBJECTS["3C144"]["dec"], 2.*np.pi*crab["ha"]/24.)
+local_fringe_frequencies = fringe_freq(10.0, wl, OBJECTS["3C144"]["dec"], 2.*np.pi*crab["ha"]/24.)
 min_freq = np.min(abs(local_fringe_frequencies))
 print min_freq
 # min_freq = 40.0 # rad^-1 (seen by eye as the limit of good data)
@@ -44,27 +44,33 @@ decs_to_try = np.arange(catalog_dec - np.deg2rad(10.0), catalog_dec + np.deg2rad
 
 s2s = []
 Y_s = []
+a1s = []
 for dec in decs_to_try:
     # print "trying %s out of %s" % (dec, len(decs_to_try))
-    a, Y_, s2, cov = fit_components(crab["ha"], crab.binned, # crab["volts"],
+    a, Y_, s2, cov = fit_components(crab["ha"], crab.normed, # crab["volts"],
         lambda ha: np.cos(2*np.pi*(B/wl) * np.cos(dec) * np.sin(2.*np.pi*ha/24.)),
         lambda ha: - np.sin(2*np.pi*(B/wl) * np.cos(dec) * np.sin(2.*np.pi*ha/24.))
     )
     s2s.append(s2)
     Y_s.append(Y_)
+    a1s.append(a)
 
+a1 = a1s[np.argmin(s2s)]
 measured_dec = decs_to_try[np.argmin(s2s)]
 
 
 s2s2 = []
 Y_s2 = []
+a2s = []
 B_to_try = np.arange(1.0, 20.0, 0.01)
 for baseline in B_to_try:
-    a, Y_, s2, cov = fit_components(crab["ha"], crab.binned, #crab["volts"],
+    a, Y_, s2, cov = fit_components(crab["ha"], crab.normed, #crab["volts"],
         lambda ha: np.cos(2*np.pi*(baseline/wl) * np.cos(catalog_dec) * np.sin(2.*np.pi*ha/24.)),
         lambda ha: - np.sin(2*np.pi*(baseline/wl) * np.cos(catalog_dec) * np.sin(2.*np.pi*ha/24.))
     )
     s2s2.append(s2)
     Y_s2.append(Y_)
+    a2s.append(a)
 
+a2 = a2s[np.argmin(s2s2)]
 measured_B = B_to_try[np.argmin(s2s2)]

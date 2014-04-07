@@ -4,8 +4,13 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+from fringe_funcs import fringe_freq
+from lsq import fit_components
 from utils import FourierFilter, Analyzer, bessel, find_indexes_of_zero_crossings
 
+
+B = 10.06
+wl = 3e8 / 10.67e9
 
 datafile = "../data/sun-4_3_2014-22.npz"
 logfile = "../data/logs/sun-4_3_2014-22-log"
@@ -19,9 +24,43 @@ sun.slice(0, 26000)
 sun.flatten_invalid_points()
 
 # Now we remove the dc offset, as well as high frequency noise
-bandpass = FourierFilter(min_freq=0.001, max_freq=0.032)
+local_fringe_frequencies = fringe_freq(B, wl, sun["dec"], 2.*np.pi*sun["ha"]/24.)
+bandpass = FourierFilter(min_freq=0.001, max_freq=max(local_fringe_frequencies))
 sun["volts"] = np.real(bandpass(sun["t"], sun["volts"])[1])
+sun.flatten_invalid_points()
 
+suncopy = sun.copyslice(8000, 21000)
+
+phi_to_try = np.arange(0.0, np.pi, np.pi/600.)
+
+s2s = []
+Y_s = []
+a_s = []
+
+positive_values = suncopy["volts"] >= 0.0
+enveloper = FourierFilter(max_freq=0.01)
+_, envelope = enveloper(suncopy["t"], suncopy["volts"] * positive_values)
+
+a, Y_, s2, cov = fit_components(suncopy["ha"], np.real(envelope),
+    lambda ha: 1,
+    lambda ha: ha,
+    lambda ha: ha**2,
+)
+
+C1, C2, C3 = a
+
+print C1, C2, C3
+ha1 = (-C2 + np.sqrt(C2**2. - 4*C1*C3)) / (2.*C3)
+ha2 = (-C2 - np.sqrt(C2**2. - 4*C1*C3)) / (2.*C3)
+print ha1
+print ha2
+
+
+
+
+
+
+'''
 minima_guesses = [-3.13, -2.22, 2.35, 3.2]
 obs_zeros = []
 plottypairs = []
@@ -81,3 +120,4 @@ for besselout in bessels:
     zeros_for_this_R = np.array([-zs[1], -zs[0], zs[0], zs[1]])
 
     residual_squared.append(sum((obs_zeros - zeros_for_this_R)**2))
+'''

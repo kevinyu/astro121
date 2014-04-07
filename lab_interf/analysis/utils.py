@@ -7,7 +7,7 @@ from clean_data import check_valid_points
 
 
 class FourierFilter:
-    def __init__(self, min_freq=0.0, max_freq=np.inf):
+    def __init__(self, min_freq=0.0, max_freq=np.inf, kill_range=None):
         """Create a fourier filter
 
         min_freq (float, default=0.0):
@@ -17,6 +17,7 @@ class FourierFilter:
         """
         self.min_freq = min_freq
         self.max_freq = max_freq
+        self.kill_range = kill_range
 
     def keep_array(self, x_fourier):
         x_fourier = abs(x_fourier)
@@ -79,10 +80,10 @@ class Analyzer:
 
     def flatten_invalid_points(self):
         avg_dc = np.mean(self["volts"])
-        self["volts"] = (self["volts"] * self["valid"]) + (avg_dc * (self["valid"] == False))
+        self["volts"] = (self["volts"] * self["valid"]) + (self.binned(600) * (self["valid"] == False))
 
     @property
-    def binned(self):
+    def normed(self):
         """ Normalize each chunk of 200 points to the maximum over that range """
         start = 0
         step = 200
@@ -95,10 +96,24 @@ class Analyzer:
             start += step
         return binned
 
+    def binned(self, step):
+        """ Normalize each chunk of 200 points to the maximum over that range """
+        start = 0
+        medianed = np.zeros(len(self["volts"]))
+        while len(medianed[start:start+step]):
+            # med = np.max(abs(binned[start:start+step]))
+            medianed[start:start+step] = np.median(abs(self["volts"][start:start+step]))
+            start += step
+        return medianed
+
 
 def bessel(fR):
-    N = 100.
-    return sum(np.sqrt(1.0-(n/N)**2.0) * np.cos(2.0*np.pi*fR*n/N) for n in np.arange(-N, N))
+    N = 1000.
+    return sum(
+            np.sqrt(1.0 - (n/N)**2.0) *
+            np.cos(2.0*np.pi*fR*n/N)
+            for n in np.arange(-N, N)
+    )
 
 
 def find_indexes_of_zero_crossings(y):
