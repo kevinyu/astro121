@@ -106,6 +106,33 @@ class Analyzer:
             start += step
         return medianed
 
+    def boxcar(self, width):
+        """ Normalize each chunk of 200 points to the maximum over that range """
+        medianed = np.zeros(len(self["volts"]))
+        for i, v in enumerate(self["volts"]):
+            boxcar = self["volts"][self["valid"] == True][max(0, i-width/2.):min(len(self["volts"]), i+width/2.)]
+            medianed[i] = v - np.median(boxcar)
+        return medianed
+
+    def real_boxcar(self, width):
+        """ Normalize each chunk of 200 points to the maximum over that range """
+        medianed = np.zeros(len(self["volts"]))
+        for i, v in enumerate(self["volts"]):
+            boxcar = list(self["volts"])[i-width/2:i+width/2]
+            medianed[i] = np.median(boxcar)
+        return self["volts"] - medianed
+
+    def envelope(self, step):
+        """ Normalize each chunk of 200 points to the maximum over that range """
+        start = 0
+        medianed = np.zeros(len(self["volts"]))
+        while len(medianed[start:start+step]):
+            # med = np.max(abs(binned[start:start+step]))
+            medianed[start:start+step] = np.max(abs(self["volts"][start:start+step] - np.mean(self["volts"][start:start+step])))
+            start += step
+        return medianed
+
+
 
 def find_roots(x, y):
     indicies = [i for i in range(len(y)-1) if (y[i] * y[i+1] < 0.0) or (y[i] == 0)]

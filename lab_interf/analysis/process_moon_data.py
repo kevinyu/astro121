@@ -1,8 +1,7 @@
-"""Process sun data"""
+"""Process moon data"""
 
 import numpy as np
 
-import matplotlib
 import matplotlib.pyplot as plt
 
 from fringe_funcs import fringe_freq, bessel
@@ -10,43 +9,43 @@ from lsq import fit_components
 from utils import FourierFilter, Analyzer, find_roots
 
 
-font = dict(
-    size = 14
-)
-matplotlib.rc('font', **font)
-
 B = 10.06
 wl = 3e8 / 10.67e9
 
-datafile = "../data/sun-4_3_2014-22.npz"
-logfile = "../data/logs/sun-4_3_2014-22-log"
+datafile = "../data/moon-4_6_2014-24.npz"
+logfile = "../data/logs/moon-4_6_2014-24-log"
 
-sun = Analyzer(datafile, logfile, dt=1.0)
 
-# First we will remove that raised section at the end (starts at index 26000)
-sun.slice(0, 26000)
+sun = Analyzer(datafile, logfile, dt=1.0, start_at_timestamp="2014-04-06 20:33:14,728")
+
+import ephem
+import datetime
+moon = ephem.Moon()
+obs = ephem.Observer()
+obs.lat = np.deg2rad(37.8732)
+obs.long = np.deg2rad(-122.2573)
+obs.date = ephem.date("2014-04-06 20:12:45")
+moon.compute(obs)
+for i, lst in enumerate(sun["lst"]):
+    sun["ra"][i] = 24. * moon.ra / (2. * np.pi)
+    sun["dec"][i] = np.rad2deg(moon.dec)
+    obs.date += 1. / 86164.
+    moon.compute(obs)
+
+sun.data["ha"] = sun.data["lst"] - sun.data["ra"]
+sun.data["ha"] -= (24.0 * (sun.data["ha"] > 12.0))
+
+sun.slice(0, len(sun["volts"])-5000)
 
 # Next we set invalid points (from telescope homing) to the avg_dc
 sun.flatten_invalid_points()
-
-
-plt.subplot(211)
-plt.plot(sun["ha"], sun["volts"])
-plt.xlabel(r"Hour angle [h]", fontsize=18)
-plt.ylabel(r"Power", fontsize=18)
-plt.subplot(212)
-trans = np.fft.fft(sun["volts"])
-freqs = np.fft.fftfreq(len(trans), 2. * np.pi * 1.0 / 86164.)
-plt.plot(np.fft.fftshift(freqs), np.fft.fftshift(abs(trans)**2))
-plt.xlabel(r"Frequency [rad$^{-1}$]", fontsize=18)
-plt.ylabel(r"Power", fontsize=18)
 
 # Now we remove the dc offset, as well as high frequency noise
 local_fringe_frequencies = fringe_freq(B, wl, sun["dec"], 2.*np.pi*sun["ha"]/24.)
 bandpass = FourierFilter(min_freq=0.001, max_freq=max(local_fringe_frequencies))
 sun["volts"] = np.real(bandpass(sun["t"], sun["volts"])[1])
 sun.flatten_invalid_points()
-sun["volts"] = sun.real_boxcar(200)
+sun["volts"] = sun.boxcar(300)
 
 def boxcar(y, width):
     """ Normalize each chunk of 200 points to the maximum over that range """
@@ -91,6 +90,17 @@ print ha1
 print ha2
 '''
 
+# Get theoretical MF values from bessel function
+fR_range = np.arange(-2.0, 2.0, 0.0005)
+bessel_y = bessel(fR_range)
+expected_roots = np.array(find_roots(fR_range, bessel_y))
+
+R_known = np.deg2rad(0.26)
+expected_freqs = expected_roots / R_known
+
+
+plt.plot(sun["ha"], sun["volts"])
+
 minima_spots = [(500, 4000), (4500, 7500), (21000, 23000), (24500, 25550)]
 obs_zeros = []
 plottypairs = []
@@ -117,48 +127,15 @@ for start, end in minima_spots:
     print "found", vertex
 obs_zeros = np.array(obs_zeros)
 
-# plt.plot(sun["ha"], sun.envelope(50))
-# for x, y in plottypairs:
-# plt.plot(x, y)
+plt.plot(sun["ha"], sun.envelope(50))
+for x, y in plottypairs:
+    plt.plot(x, y)
 
 
 index_of_zeros = np.array([sun["ha"].searchsorted(thing) for thing in obs_zeros])
 obs_freqs = fringe_freq(B, wl, np.deg2rad(sun["dec"][index_of_zeros]), 2. * np.pi * obs_zeros / 24.)
 
 print "obs_freqs =", obs_freqs
-
-
-# Get theoretical MF values from bessel function
-
-fR_range = np.arange(0.0, 4.0, 0.0005)
-bessel_y = bessel(fR_range)
-expected_roots = np.array(find_roots(fR_range, bessel_y))
-
-try_freq = obs_freqs[-1]
-possible_R = expected_roots / try_freq
-print "possible R", possible_R
-print "possible R", np.rad2deg(possible_R)
-plt.plot(fR_range/try_freq, bessel_y)
-plt.show()
-
-sun["ffs"] = (B/wl) * np.cos(np.deg2rad(sun["dec"])) * np.cos(2. * np.pi * sun["ha"] / 24.)
-def find_predicted_minima_indicies(R):
-    ffs = expected_roots / R
-    L = len(sun["ffs"])
-    indicies = []
-    for ff in ffs:
-        indicies.append(sun["ffs"].searchsorted(ff))
-        indicies.append(L - np.array(list(reversed(sun["ffs"]))).searchsorted(ff))
-    return indicies
-
-
-try_freq = obs_freqs[-2]
-possible_R = expected_roots / try_freq
-print "possible R", possible_R
-print "possible R", np.rad2deg(possible_R)
-plt.plot(fR_range/try_freq, bessel_y)
-plt.show()
-
 
 
 
