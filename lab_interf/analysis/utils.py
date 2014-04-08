@@ -118,7 +118,7 @@ class Analyzer:
         """ Normalize each chunk of 200 points to the maximum over that range """
         medianed = np.zeros(len(self["volts"]))
         for i, v in enumerate(self["volts"]):
-            boxcar = list(self["volts"])[i-width/2:i+width/2]
+            boxcar = list(self["volts"])[max(0, i-width/2):i+width/2]
             medianed[i] = np.median(boxcar)
         return self["volts"] - medianed
 

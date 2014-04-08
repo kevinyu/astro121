@@ -16,52 +16,44 @@ datafile = "../data/moon-4_6_2014-24.npz"
 logfile = "../data/logs/moon-4_6_2014-24-log"
 
 
-sun = Analyzer(datafile, logfile, dt=1.0, start_at_timestamp="2014-04-06 20:33:14,728")
+moon = Analyzer(datafile, logfile, dt=1.0, start_at_timestamp="2014-04-06 20:33:14,728")
 
 import ephem
 import datetime
-moon = ephem.Moon()
+damoon = ephem.Moon()
 obs = ephem.Observer()
 obs.lat = np.deg2rad(37.8732)
 obs.long = np.deg2rad(-122.2573)
 obs.date = ephem.date("2014-04-06 20:12:45")
-moon.compute(obs)
-for i, lst in enumerate(sun["lst"]):
-    sun["ra"][i] = 24. * moon.ra / (2. * np.pi)
-    sun["dec"][i] = np.rad2deg(moon.dec)
+damoon.compute(obs)
+for i, lst in enumerate(moon["lst"]):
+    moon["ra"][i] = 24. * damoon.ra / (2. * np.pi)
+    moon["dec"][i] = np.rad2deg(damoon.dec)
     obs.date += 1. / 86164.
-    moon.compute(obs)
+    damoon.compute(obs)
 
-sun.data["ha"] = sun.data["lst"] - sun.data["ra"]
-sun.data["ha"] -= (24.0 * (sun.data["ha"] > 12.0))
+moon.data["ha"] = moon.data["lst"] - moon.data["ra"]
+moon.data["ha"] -= (24.0 * (moon.data["ha"] > 12.0))
 
-sun.slice(0, len(sun["volts"])-5000)
+moon.slice(0, len(moon["volts"])-5000)
 
 # Next we set invalid points (from telescope homing) to the avg_dc
-sun.flatten_invalid_points()
+moon.flatten_invalid_points()
 
 # Now we remove the dc offset, as well as high frequency noise
-local_fringe_frequencies = fringe_freq(B, wl, sun["dec"], 2.*np.pi*sun["ha"]/24.)
+local_fringe_frequencies = fringe_freq(B, wl, moon["dec"], 2.*np.pi*moon["ha"]/24.)
 bandpass = FourierFilter(min_freq=0.001, max_freq=max(local_fringe_frequencies))
-sun["volts"] = np.real(bandpass(sun["t"], sun["volts"])[1])
-sun.flatten_invalid_points()
-sun["volts"] = sun.boxcar(300)
-
-def boxcar(y, width):
-    """ Normalize each chunk of 200 points to the maximum over that range """
-    medianed = np.zeros(len(y))
-    for i, v in enumerate(y):
-        boxcar = y[max(0, i-width/2.):min(len(y), i+width/2.)]
-        medianed[i] = v - np.median(boxcar)
-    return medianed
+moon["volts"] = np.real(bandpass(moon["t"], moon["volts"])[1])
+moon.flatten_invalid_points()
+moon["volts"] = moon.real_boxcar(200)
 
 '''
-suncopy = sun.copyslice(3600, 7100)
-suncopy["ha"] = suncopy["ha"]
+mooncopy = moon.copyslice(3600, 7100)
+mooncopy["ha"] = mooncopy["ha"]
 
-positive_values = suncopy["volts"] >= 0.0
+positive_values = mooncopy["volts"] >= 0.0
 enveloper = FourierFilter(max_freq=0.01)
-_, envelope = enveloper(suncopy["t"], suncopy["volts"] * positive_values)
+_, envelope = enveloper(mooncopy["t"], mooncopy["volts"] * positive_values)
 
 phi_to_try = np.arange(0.0, np.pi, np.pi/300.)
 
@@ -69,9 +61,9 @@ s2s = []
 Y_s = []
 a_s = []
 
-# a, Y_, s2, cov = fit_components(suncopy["ha"], np.real(envelope),
+# a, Y_, s2, cov = fit_components(mooncopy["ha"], np.real(envelope),
 for phi in phi_to_try:
-    a, Y_, s2, cov = fit_components(suncopy["ha"], suncopy["volts"],
+    a, Y_, s2, cov = fit_components(mooncopy["ha"], mooncopy["volts"],
         lambda ha: F(ha, phi),
         lambda ha: F(ha, phi) * ha,
         lambda ha: F(ha, phi) * ha**2,
@@ -99,24 +91,23 @@ R_known = np.deg2rad(0.26)
 expected_freqs = expected_roots / R_known
 
 
-plt.plot(sun["ha"], sun["volts"])
-
-minima_spots = [(500, 4000), (4500, 7500), (21000, 23000), (24500, 25550)]
+# plt.plot(moon["t"], moon["volts"])
+minima_spots = [(7000, 11000)]
 obs_zeros = []
 plottypairs = []
 for start, end in minima_spots:
     # Cut out a small window around the guessed envelope
     # fit a quadratic to find minima
-    (C1, C2, C3), Y_, s2, cov = fit_components(sun["ha"][start: end], sun.envelope(50)[start:end],
+    (C1, C2, C3), Y_, s2, cov = fit_components(moon["ha"][start: end], moon.envelope(50)[start:end],
         lambda ha: ha ** 2,
         lambda ha: ha,
         lambda ha: 1,
     )
-    plottypairs.append((sun["ha"][start:end], Y_))
+    plottypairs.append((moon["ha"][start:end], Y_))
     vertex = -C2 / (2. * C1)
     obs_zeros.append(vertex)
 
-    '''    
+    '''
     _, aa = zip(*sorted(zip(b, a)))
     min_ha = aa[0]
     obs_zeros.append(min_ha)
@@ -127,13 +118,13 @@ for start, end in minima_spots:
     print "found", vertex
 obs_zeros = np.array(obs_zeros)
 
-plt.plot(sun["ha"], sun.envelope(50))
+plt.plot(moon["ha"], moon.envelope(50))
 for x, y in plottypairs:
     plt.plot(x, y)
 
 
-index_of_zeros = np.array([sun["ha"].searchsorted(thing) for thing in obs_zeros])
-obs_freqs = fringe_freq(B, wl, np.deg2rad(sun["dec"][index_of_zeros]), 2. * np.pi * obs_zeros / 24.)
+index_of_zeros = np.array([moon["ha"].searchsorted(thing) for thing in obs_zeros])
+obs_freqs = fringe_freq(B, wl, np.deg2rad(moon["dec"][index_of_zeros]), 2. * np.pi * obs_zeros / 24.)
 
 print "obs_freqs =", obs_freqs
 
@@ -142,8 +133,8 @@ print "obs_freqs =", obs_freqs
 
 '''
 demod = FourierFilter(max_freq=1.0)
-# plt.plot(sun["ha"], abs(sun["volts"])/ max(sun["volts"]))
-# a, b = demod(sun["ha"], abs(sun["volts"]))
+# plt.plot(moon["ha"], abs(moon["volts"])/ max(moon["volts"]))
+# a, b = demod(moon["ha"], abs(moon["volts"]))
 # plt.plot(a, b / max(b))
 # for x, y in plottypairs:
 #    plt.plot(x, map(lambda x: x*100, y))
@@ -156,8 +147,8 @@ try_range = np.deg2rad(np.arange(0.262, 0.275, accuracy))  # try radii in this r
 # We use the theoretical bessel function. which is a function
 # of fringe frequnecy and R
 # Since the bessel function is even, we can just find the zero crossings for positive hour angle, and then say they apply to negative as well
-hour_zero_index = sun["ha"].searchsorted(0.0)
-sliced = sun.copyslice(hour_zero_index, None)
+hour_zero_index = moon["ha"].searchsorted(0.0)
+sliced = moon.copyslice(hour_zero_index, None)
 
 # fringe frequency array
 ffs = (10./0.025) * np.cos(np.deg2rad(sliced["dec"])) * np.cos(2*np.pi * sliced["ha"]  /24.)
@@ -178,3 +169,4 @@ for besselout in bessels:
 
     residual_squared.append(sum((obs_zeros - zeros_for_this_R)**2))
 '''
+"""
