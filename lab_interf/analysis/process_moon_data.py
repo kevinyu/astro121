@@ -40,12 +40,30 @@ moon.slice(0, len(moon["volts"])-5000)
 # Next we set invalid points (from telescope homing) to the avg_dc
 moon.flatten_invalid_points()
 
+plt.subplot(211)
+plt.plot(moon["ha"], moon["volts"])
+plt.xlabel(r"Hour angle [h]", fontsize=18)
+plt.ylabel(r"Power", fontsize=18)
+plt.subplot(212)
+trans = np.fft.fft(moon["volts"])
+freqs = np.fft.fftfreq(len(trans), 2. * np.pi * 1.0 / 86164.)
+plt.plot(np.fft.fftshift(freqs), np.fft.fftshift(abs(trans)**2))
+plt.xlabel(r"Frequency [rad$^{-1}$]", fontsize=18)
+plt.ylabel(r"Power", fontsize=18)
+
 # Now we remove the dc offset, as well as high frequency noise
 local_fringe_frequencies = fringe_freq(B, wl, moon["dec"], 2.*np.pi*moon["ha"]/24.)
 bandpass = FourierFilter(min_freq=0.001, max_freq=max(local_fringe_frequencies))
-moon["volts"] = np.real(bandpass(moon["t"], moon["volts"])[1])
+# moon["volts"] = np.real(bandpass(moon["t"], moon["volts"])[1])
 moon.flatten_invalid_points()
-moon["volts"] = moon.real_boxcar(200)
+# moon["volts"] = moon.real_boxcar(200)
+moon["volts"] = np.load("moonshine.npz")["volts"]
+
+plt.figure()
+plt.plot(moon["ha"], moon["volts"])
+plt.xlabel(r"Hour angle [h]", fontsize=18)
+plt.ylabel(r"Power", fontsize=18)
+plt.plot(moon["ha"], moon.envelope(50))
 
 '''
 mooncopy = moon.copyslice(3600, 7100)
@@ -169,4 +187,3 @@ for besselout in bessels:
 
     residual_squared.append(sum((obs_zeros - zeros_for_this_R)**2))
 '''
-"""
