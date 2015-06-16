@@ -68,4 +68,9 @@ what frequencies to look at?
 remove RF interference
 averages
 
+moo
+when you add 100K noise
+the amplitude without noise is g * T_sky
+amplitude with noise is g * (T_sky + 100K)
+
 """
